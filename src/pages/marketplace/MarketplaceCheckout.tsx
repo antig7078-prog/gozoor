@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCartStore } from '../../lib/store/cartStore';
@@ -10,7 +10,6 @@ import {
     Loader2,
     CheckCircle2,
     Lock,
-    Wallet,
     ShoppingBag
 } from 'lucide-react';
 import toast from 'react-hot-toast';

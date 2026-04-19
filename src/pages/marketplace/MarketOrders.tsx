@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Package, Clock, CheckCircle2, XCircle, Truck, ArrowRight } from 'lucide-react';
+import { Package, Clock, CheckCircle2, XCircle, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface OrderItem {
@@ -116,9 +116,9 @@ export const MarketOrders = () => {
                                 </div>
                                 <div>
                                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold ${order.status === 'Pending' ? 'bg-amber-50 text-amber-700' :
-                                            order.status === 'Delivered' ? 'bg-emerald-50 text-emerald-700' :
-                                                order.status === 'Cancelled' ? 'bg-red-50 text-red-700' :
-                                                    'bg-blue-50 text-blue-700'
+                                        order.status === 'Delivered' ? 'bg-emerald-50 text-emerald-700' :
+                                            order.status === 'Cancelled' ? 'bg-red-50 text-red-700' :
+                                                'bg-blue-50 text-blue-700'
                                         }`}>
                                         {getStatusIcon(order.status)}
                                         {getStatusText(order.status)}
