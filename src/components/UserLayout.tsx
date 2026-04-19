@@ -9,20 +9,31 @@ import {
     LogOut,
     Menu,
     X,
-    User as UserIcon
+    User as UserIcon,
+    ShoppingBag,
+    Briefcase,
+    FileText,
+    MonitorPlay
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCartStore } from '../lib/store/cartStore';
 
 export const UserLayout = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { user, signOut } = useAuth();
+    const { totalItems } = useCartStore();
     const location = useLocation();
     const navigate = useNavigate();
 
     const navigation = [
         { name: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
         { name: 'استكشاف الدورات', href: '/courses', icon: Compass },
-        { name: 'دوراتي التعليمية', href: '/dashboard', icon: BookOpen },
+        { name: 'دوراتي التعليمية', href: '/my-courses', icon: BookOpen },
+        { name: 'المتجر', href: '/marketplace', icon: ShoppingBag },
+        { name: 'الوظائف', href: '/jobs', icon: Briefcase },
+        { name: 'طلبات التوظيف', href: '/my-applications', icon: FileText },
+        { name: 'خدمات المستقلين', href: '/services', icon: MonitorPlay },
+        { name: 'خدماتي', href: '/user-services', icon: MonitorPlay },
         { name: 'الملف الشخصي', href: '/profile', icon: Settings },
     ];
 
@@ -47,6 +58,14 @@ export const UserLayout = () => {
                 <div className="hidden sm:block text-left ml-2">
                     <p className="text-xs font-bold text-slate-700">{user?.email?.split('@')[0] || 'المستخدم'}</p>
                 </div>
+                <Link to="/cart" className="relative p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                    <ShoppingBag className="w-5 h-5" />
+                    {totalItems > 0 && (
+                        <span className="absolute top-0 right-0 -mr-1 -mt-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                            {totalItems}
+                        </span>
+                    )}
+                </Link>
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 shadow-sm border-2 border-emerald-50">
                     <UserIcon className="w-5 h-5" />
                 </div>
@@ -79,7 +98,7 @@ export const UserLayout = () => {
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg">🌿</div>
                                     <div>
-                                        <h1 className="text-xl font-black text-slate-800 leading-tight">جذور للتعليم</h1>
+                                        <h1 className="text-xl font-black text-slate-800 leading-tight">جذور</h1>
                                         <p className="text-emerald-600 text-xs font-bold flex items-center gap-1">
                                             طالب مسجل
                                         </p>

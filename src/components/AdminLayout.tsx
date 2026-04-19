@@ -11,7 +11,10 @@ import {
     Menu,
     X,
     ShieldAlert,
-    Tag
+    Tag,
+    Store,
+    Briefcase,
+    MonitorPlay
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -25,6 +28,9 @@ export const AdminLayout = () => {
         { name: 'الرئيسية', href: '/admin', icon: LayoutDashboard },
         { name: 'الدورات التعليمية', href: '/admin/courses', icon: BookOpen },
         { name: 'التصنيفات', href: '/admin/categories', icon: Tag },
+        { name: 'المنتجات', href: '/admin/products', icon: Store },
+        { name: 'الوظائف', href: '/admin/jobs', icon: Briefcase },
+        { name: 'الخدمات', href: '/admin/services', icon: MonitorPlay },
         { name: 'المستخدمين', href: '/admin/users', icon: Users },
         { name: 'الطلبات', href: '/admin/orders', icon: CreditCard },
         { name: 'الإعدادات', href: '/admin/settings', icon: Settings },
@@ -73,7 +79,7 @@ export const AdminLayout = () => {
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg">🌿</div>
                                     <div>
-                                        <h1 className="text-xl font-black text-white leading-tight">جذور للتعليم</h1>
+                                        <h1 className="text-xl font-black text-white leading-tight">جذور</h1>
                                         <p className="text-emerald-400 text-xs font-bold flex items-center gap-1">
                                             <ShieldAlert className="w-3 h-3" /> لوحة الإدارة
                                         </p>
