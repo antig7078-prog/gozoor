@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Store, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Store, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
@@ -16,7 +15,6 @@ interface Product {
 
 export const UserProducts = () => {
     const { user } = useAuth();
-    const navigate = useNavigate();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
