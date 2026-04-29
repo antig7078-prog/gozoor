@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+import { Leaf } from 'lucide-react';
+
 interface AuthContextType {
     session: Session | null;
     user: User | null;
@@ -49,10 +51,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return (
         <AuthContext.Provider value={{ session, user, role, signOut, loading }}>
-            {/* Show a very simple full screen loader while initializing */}
+            {/* Show a premium full screen loader while initializing */}
             {loading ? (
-                <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white">
+                    <div className="relative mb-8">
+                        <div className="w-20 h-20 bg-gradient-to-tr from-brand-primary-hover to-brand-accent rounded-3xl shadow-2xl shadow-brand-primary/20 flex items-center justify-center animate-pulse">
+                            <Leaf className="w-10 h-10 text-white" />
+                        </div>
+                        <div className="absolute -inset-4 border-2 border-brand-primary/10 rounded-[2rem] animate-[spin_4s_linear_infinite]"></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"></div>
+                    </div>
                 </div>
             ) : (
                 children

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { MonitorPlay, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { Loader } from '../../components/ui/Loader';
+import { PageContainer } from '../../components/shared/PageContainer';
+import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
+import { PageHeader } from '../../components/shared/PageHeader';
 
 interface Service {
     id: string;
@@ -53,55 +55,60 @@ export const ManageServices = () => {
     };
 
     if (loading) {
-        return <Loader fullHeight size={48} />;
+        return <LoadingSpinner fullPage message="جاري تحميل الخدمات..." />;
     }
 
     return (
-        <div dir="rtl">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
-                    <MonitorPlay className="w-6 h-6" />
-                </div>
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800">إدارة الخدمات</h1>
-                    <p className="text-slate-500 text-sm font-medium">مراقبة الخدمات المعروضة من المستقلين</p>
-                </div>
-            </div>
+        <PageContainer maxWidth="xl" noPadding>
+            <PageHeader 
+                title="إدارة الخدمات"
+                description="مراقبة الخدمات المعروضة من المستقلين"
+                icon={MonitorPlay}
+            />
 
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-right">
-                        <thead className="bg-slate-50 border-b border-slate-100 text-slate-600">
-                            <tr>
-                                <th className="px-6 py-4 font-bold">الخدمة</th>
-                                <th className="px-6 py-4 font-bold">السعر</th>
-                                <th className="px-6 py-4 font-bold">مدة التسليم</th>
-                                <th className="px-6 py-4 font-bold">تاريخ الإضافة</th>
-                                <th className="px-6 py-4 font-bold text-center">إجراءات</th>
+            <div className="bg-white rounded-[var(--radius-card)] border border-border-default shadow-sm overflow-hidden">
+                <div className="overflow-x-auto hide-scrollbar">
+                    <table className="w-full text-right border-collapse min-w-[800px]">
+                        <thead>
+                            <tr className="bg-surface-primary border-b border-border-default">
+                                <th className="px-6 py-5 font-black text-text-primary">الخدمة</th>
+                                <th className="px-6 py-5 font-black text-text-primary">السعر</th>
+                                <th className="px-6 py-5 font-black text-text-primary">مدة التسليم</th>
+                                <th className="px-6 py-5 font-black text-text-primary">تاريخ الإضافة</th>
+                                <th className="px-6 py-5 font-black text-text-primary text-center">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {services.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500 font-medium">
-                                        لا توجد خدمات حالياً
+                                    <td colSpan={5} className="px-6 py-20 text-center text-text-muted font-bold">
+                                        لا توجد خدمات حالياً في المنصة
                                     </td>
                                 </tr>
                             ) : (
                                 services.map((service) => (
-                                    <tr key={service.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-slate-800">{service.title}</td>
-                                        <td className="px-6 py-4 font-bold text-emerald-600">${service.price}</td>
-                                        <td className="px-6 py-4 text-slate-600">{service.delivery_time_days} أيام</td>
-                                        <td className="px-6 py-4 text-slate-500 text-sm">
+                                    <tr key={service.id} className="hover:bg-brand-primary-light/10 transition-colors">
+                                        <td className="px-6 py-5">
+                                            <div className="font-black text-text-primary text-base md:text-lg">{service.title}</div>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <span className="font-black text-brand-primary text-base md:text-lg whitespace-nowrap">{service.price} ج.م</span>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] md:text-xs font-black bg-slate-100 text-slate-700 whitespace-nowrap">
+                                                {service.delivery_time_days} أيام
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-5 text-sm font-bold text-text-secondary whitespace-nowrap">
                                             {new Date(service.created_at).toLocaleDateString('ar-EG')}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-5">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
                                                     onClick={() => handleDelete(service.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-[var(--radius-button)] transition-all"
                                                     title="حذف الخدمة"
+                                                    aria-label={`حذف الخدمة ${service.title}`}
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
@@ -114,6 +121,10 @@ export const ManageServices = () => {
                     </table>
                 </div>
             </div>
-        </div>
+        </PageContainer>
     );
 };
+
+
+
+

@@ -19,7 +19,7 @@ export const Loader = ({
     return (
         <div className={wrapperClasses}>
             <div
-                className="rounded-full animate-spin border-4 border-emerald-200 border-t-emerald-600"
+                className="rounded-full animate-spin border-4 border-brand-primary/10 border-t-brand-primary"
                 style={{ width: size, height: size }}
             ></div>
             {message && <p className="text-slate-500 font-medium animate-pulse">{message}</p>}
