@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Users, Mail, Shield, CheckCircle, ShieldAlert, Trash2, ShieldCheck } from 'lucide-react';
+import { Users, Mail, CheckCircle, Trash2, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmModal } from '../../components/shared/ConfirmModal';
 import { PageContainer } from '../../components/shared/PageContainer';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Plus, Trash2, ShoppingBag, Package, Hash, Calendar, Tag, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Store, Plus, Trash2, ShoppingBag, Hash, Calendar, ChevronLeft, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';

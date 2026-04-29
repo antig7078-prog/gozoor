@@ -9,9 +9,9 @@ import {
     LogOut,
     Menu,
     X,
-    User as UserIcon,
     ShoppingBag,
     Briefcase,
+
     FileText,
     MonitorPlay,
     ShoppingCart,

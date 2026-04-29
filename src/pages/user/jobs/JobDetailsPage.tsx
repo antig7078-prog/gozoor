@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, ArrowRight, MapPin, DollarSign, Clock, Send, FileText, CheckCircle2, ChevronRight, Building2, Sparkles, Zap, ChevronLeft, Calendar } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Clock, Send, FileText, CheckCircle2, ChevronRight, Building2, Sparkles, Zap, ChevronLeft, Calendar } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -25,7 +25,6 @@ interface Job {
 
 export const JobDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
     const { user } = useAuth();
     const requireAuth = useRequireAuth();
 
@@ -83,7 +82,7 @@ export const JobDetailsPage = () => {
         try {
             const { error } = await supabase.from('job_applications').insert([{
                 job_id: id,
-                applicant_id: user.id,
+                applicant_id: user?.id,
                 resume_url: applyForm.resume_url,
                 cover_letter: applyForm.cover_letter
             }]);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
-import { MonitorPlay, Plus, Trash2, Calendar, Clock, DollarSign, ExternalLink, Sparkles } from 'lucide-react';
+import { MonitorPlay, Plus, Trash2, Calendar, Clock, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageContainer } from '../../../components/shared/PageContainer';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
     PlayCircle,
@@ -9,7 +9,6 @@ import {
     FileText,
     Menu,
     X,
-    CheckCircle2,
     Trophy,
     Check
 } from 'lucide-react';
@@ -21,10 +20,8 @@ import { Button } from '../../components/ui/Button';
 export const CoursePlayer = () => {
     const { id } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
-    const navigate = useNavigate();
     const { user } = useAuth();
-
-    const [course, setCourse] = useState<any>(null);
+    const navigate = useNavigate();
     const [sections, setSections] = useState<any[]>([]);
     const [activeLecture, setActiveLecture] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +62,6 @@ export const CoursePlayer = () => {
                 ]);
 
                 if (courseRes.error) throw courseRes.error;
-                setCourse(courseRes.data);
 
                 const sortedSections = (sectionsRes.data || []).map(sec => ({
                     ...sec,
@@ -303,7 +299,7 @@ export const CoursePlayer = () => {
                                             }`}
                                     >
                                         {completedLectures.includes(activeLecture.id) ? (
-                                            <><CheckCircle2 className="w-4 h-4" /> تم الإنجاز</>
+                                            'تم الإنجاز'
                                         ) : (
                                             'تحديد كمكتمل'
                                         )}

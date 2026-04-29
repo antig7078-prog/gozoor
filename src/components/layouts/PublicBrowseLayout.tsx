@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Leaf, LogIn, LayoutDashboard, ShoppingCart, Menu, X, Home, Compass, ShoppingBag, Briefcase, MonitorPlay } from 'lucide-react';
 import { useState } from 'react';
@@ -13,7 +13,6 @@ import { useCartStore } from '../../lib/store/cartStore';
 export const PublicBrowseLayout = () => {
     const { user } = useAuth();
     const location = useLocation();
-    const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { totalItems } = useCartStore();
 

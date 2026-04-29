@@ -7,8 +7,7 @@ import {
     Eye, 
     ExternalLink,
     AlertCircle,
-    UserCheck,
-    Image as ImageIcon
+    UserCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +15,6 @@ import { PageContainer } from '../../components/shared/PageContainer';
 import { SearchBar } from '../../components/shared/SearchBar';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { PageHeader } from '../../components/shared/PageHeader';
-import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 
 export const AdminEnrollments = () => {
     const [enrollments, setEnrollments] = useState<any[]>([]);

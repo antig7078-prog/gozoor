@@ -53,7 +53,7 @@ export const AddCourse = () => {
     const handleFileUpload = async (file: File, pathIdentifier: string): Promise<string | null> => {
         try {
             setUploadingState(pathIdentifier);
-            const toastId = toast.loading('جاري رفع الملف...', { id: 'upload' });
+            toast.loading('جاري رفع الملف...', { id: 'upload' });
 
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;

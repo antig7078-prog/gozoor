@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Search, MapPin, DollarSign, Clock, Filter, ArrowLeft, Sparkles, Building2, Zap, ChevronLeft } from 'lucide-react';
+import { Briefcase, Search, MapPin, DollarSign, Clock, Filter, Sparkles, Building2, Zap, ChevronLeft } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';

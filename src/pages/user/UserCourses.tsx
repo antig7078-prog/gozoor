@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Play, Clock, BookOpen, User, Star, ArrowRight, BookText, TrendingUp, Sparkles, Filter, ChevronLeft, Layout, List, Eye, Heart, PlayCircle, Trophy, GraduationCap, Users } from 'lucide-react';
+import { Clock, BookOpen, User, Star, TrendingUp, Sparkles, Heart, Trophy, GraduationCap, Users, PlayCircle, Eye } from 'lucide-react';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { Link } from 'react-router-dom';
@@ -90,11 +90,11 @@ export const UserCourses = () => {
         const isFav = favoriteIds.includes(courseId);
         try {
             if (isFav) {
-                await supabase.from('favorites').delete().eq('user_id', user.id).eq('course_id', courseId);
+                await supabase.from('favorites').delete().eq('user_id', user?.id).eq('course_id', courseId);
                 setFavoriteIds(prev => prev.filter(id => id !== courseId));
                 toast.success('تمت الإزالة من المفضلة');
             } else {
-                await supabase.from('favorites').insert([{ user_id: user.id, course_id: courseId }]);
+                await supabase.from('favorites').insert([{ user_id: user?.id, course_id: courseId }]);
                 setFavoriteIds(prev => [...prev, courseId]);
                 toast.success('تمت الإضافة للمفضلة');
             }
