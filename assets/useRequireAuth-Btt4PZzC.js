@@ -1,0 +1,1 @@
+import{c as e}from"./chunk-OE4NN4TA-PoYozIsY.js";import{n as t}from"./dist-4P9JCRCB.js";import{n}from"./AuthContext-Dn4cXPxl.js";var r=()=>{let{user:r}=n(),i=e();return e=>r?!0:(t.error(e||`لازم تسجل دخول الأول عشان تقدر تعمل العملية دي 🔐`,{duration:4e3,style:{fontWeight:700,direction:`rtl`}}),i(`/login`,{state:{from:window.location.pathname}}),!1)};export{r as t};
