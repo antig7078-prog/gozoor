@@ -251,6 +251,7 @@ export const CommunityPage = () => {
 
         } catch (error) {
             console.error('Error toggling like:', error);
+            toast.error('عذراً، حدث خطأ أثناء محاولة الإعجاب');
         }
     };
 

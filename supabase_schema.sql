@@ -299,6 +299,16 @@ CREATE POLICY "Posts are public" ON public.posts FOR SELECT USING (true);
 CREATE POLICY "Users can create posts" ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete own posts" ON public.posts FOR DELETE USING (auth.uid() = user_id);
 
+-- سياسات الإعجابات
+ALTER TABLE public.post_likes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Likes are public" ON public.post_likes FOR SELECT USING (true);
+CREATE POLICY "Users can like/unlike" ON public.post_likes FOR ALL USING (auth.uid() = user_id);
+
+-- سياسات التعليقات
+ALTER TABLE public.post_comments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Comments are public" ON public.post_comments FOR SELECT USING (true);
+CREATE POLICY "Users can manage own comments" ON public.post_comments FOR ALL USING (auth.uid() = user_id);
+
 -- سياسات الكورسات
 CREATE POLICY "Published courses are public" ON public.courses FOR SELECT USING (status = 'Published');
 CREATE POLICY "Admins manage courses" ON public.courses FOR ALL USING (
