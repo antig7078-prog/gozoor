@@ -10,10 +10,15 @@ import { PageHeader } from '../../../components/shared/PageHeader';
 import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 import { useState } from 'react';
 
+import { useAuth } from '../../../contexts/AuthContext';
+
 export const Cart = () => {
     const { items, removeItem, updateQuantity, clearCart } = useCartStore();
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    const hasSelfOwnedItems = items.some(item => item.seller_id === user?.id);
 
     const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -89,7 +94,7 @@ export const Cart = () => {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
                                     key={item.id}
-                                    className="bg-white rounded-[var(--radius-card)] border border-border-subtle shadow-sm hover:shadow-xl transition-all p-6 flex flex-col sm:flex-row items-center gap-8 group"
+                                    className={`bg-white rounded-[var(--radius-card)] border ${item.seller_id === user?.id ? 'border-red-300 bg-red-50/30' : 'border-border-subtle'} shadow-sm hover:shadow-xl transition-all p-6 flex flex-col sm:flex-row items-center gap-8 group`}
                                 >
                                     <div className="w-32 h-32 bg-surface-primary rounded-2xl overflow-hidden shrink-0 flex items-center justify-center relative border border-border-subtle">
                                         {item.image_url ? (
@@ -107,6 +112,11 @@ export const Cart = () => {
                                             </h3>
                                         </Link>
                                         <div className="text-text-muted font-bold text-sm">سعر الوحدة: <span className="text-text-primary">{item.price} ج.م</span></div>
+                                        {item.seller_id === user?.id && (
+                                            <div className="text-red-500 text-[10px] font-black mt-2 bg-red-100/50 inline-block px-3 py-1 rounded-full border border-red-200">
+                                                ⚠️ عذراً، لا يمكنك شراء منتجك الخاص
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex items-center gap-8 w-full sm:w-auto justify-between sm:justify-start pt-6 sm:pt-0 border-t sm:border-t-0 border-slate-50">
@@ -183,11 +193,18 @@ export const Cart = () => {
                             </div>
                         </div>
 
+                        {hasSelfOwnedItems && (
+                            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-bold leading-relaxed">
+                                <p>⚠️ السلة تحتوي على منتجات تمتلكها. يرجى إزالة منتجاتك الخاصة لتتمكن من إتمام عملية الشراء.</p>
+                            </div>
+                        )}
+
                         <Button
                             onClick={() => navigate('/marketplace/checkout')}
                             variant="primary"
                             size="lg"
                             className="w-full py-6 text-lg"
+                            disabled={hasSelfOwnedItems}
                             icon={ChevronLeft}
                             iconPosition="right"
                         >

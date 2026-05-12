@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingBag, ShoppingCart, Star, ChevronRight, Check, Package, Info, ArrowRight } from 'lucide-react';
+import { ShoppingBag, ShoppingCart, Star, ChevronRight, Check, Package, Info, ArrowRight, MessageCircle, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../../lib/supabase';
 import { useCartStore } from '../../../lib/store/cartStore';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
+import { useAuth } from '../../../contexts/AuthContext';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { Button } from '../../../components/ui/Button';
@@ -21,12 +22,18 @@ interface Product {
     stock: number;
     image_url: string;
     category: string;
+    profiles?: {
+        full_name: string;
+        whatsapp: string;
+        phone: string;
+    }
 }
 
 export const ProductDetails = () => {
     const { id } = useParams<{ id: string }>();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -34,7 +41,7 @@ export const ProductDetails = () => {
             try {
                 const { data, error } = await supabase
                     .from('products')
-                    .select('*')
+                    .select('*, profiles:seller_id(full_name, whatsapp, phone)')
                     .eq('id', id)
                     .single();
 
@@ -52,17 +59,43 @@ export const ProductDetails = () => {
 
     const addItem = useCartStore((state) => state.addItem);
     const requireAuth = useRequireAuth();
+    const isOwner = user?.id === product?.seller_id;
 
     const addToCart = () => {
         if (!requireAuth('سجّل دخولك الأول عشان تقدر تضيف منتجات للسلة 🛒')) return;
         if (!product) return;
+        
+        if (isOwner) {
+            toast.error('لا يمكنك إضافة منتجك الخاص إلى السلة!');
+            return;
+        }
+
         addItem({
             id: product.id,
+            seller_id: product.seller_id,
             title: product.title,
             price: product.price,
             image_url: product.image_url
         });
         toast.success(`تمت إضافة ${product.title} إلى السلة بنجاح!`);
+    };
+
+    const contactSeller = () => {
+        if (isOwner) {
+            toast.error('لا يمكنك التواصل مع نفسك!');
+            return;
+        }
+
+        if (!product?.profiles?.whatsapp && !product?.profiles?.phone) {
+            toast.error('عذراً، التاجر لم يضف بيانات التواصل بعد.');
+            return;
+        }
+
+        if (product.profiles.whatsapp) {
+            window.open(`https://wa.me/${product.profiles.whatsapp}`, '_blank');
+        } else {
+            window.location.href = `tel:${product.profiles.phone}`;
+        }
     };
 
     if (loading) {
@@ -171,24 +204,40 @@ export const ProductDetails = () => {
                             </Card>
                             <Card className="p-4 bg-surface-primary border-border-subtle/50" hoverable={false}>
                                 <div className="flex items-center gap-2 text-text-muted text-[10px] font-black uppercase tracking-widest mb-1">
-                                    <Info className="w-3.5 h-3.5" />
-                                    التوصيل
+                                    <User className="w-3.5 h-3.5" />
+                                    التاجر
                                 </div>
-                                <div className="text-sm font-black text-text-primary">خلال 24-48 ساعة</div>
+                                <div className="text-sm font-black text-text-primary">{product.profiles?.full_name || 'بائع معتمد'}</div>
                             </Card>
                         </div>
                     </div>
 
-                    <div className="mt-auto">
+                    <div className="mt-auto space-y-4">
+                        {isOwner && (
+                            <div className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-xl text-center font-bold text-sm mb-4">
+                                💡 هذا منتجك الخاص، يمكنك إدارته من لوحة التحكم.
+                            </div>
+                        )}
                         <Button 
                             onClick={addToCart}
-                            disabled={product.stock <= 0}
+                            disabled={product.stock <= 0 || isOwner}
                             variant="primary"
                             size="lg"
                             className="w-full py-4 sm:py-6 text-lg sm:text-xl"
                             icon={ShoppingCart}
                         >
-                            إضافة إلى السلة الآن
+                            {isOwner ? 'منتجك الخاص' : 'إضافة إلى السلة الآن'}
+                        </Button>
+                        
+                        <Button 
+                            onClick={contactSeller}
+                            disabled={isOwner}
+                            variant="secondary"
+                            size="lg"
+                            className="w-full py-4 sm:py-6 text-lg sm:text-xl border-brand-primary/20 text-brand-primary"
+                            icon={MessageCircle}
+                        >
+                            {isOwner ? 'تواصل مع نفسك (غير متاح)' : 'التواصل مع التاجر'}
                         </Button>
                     </div>
                 </div>

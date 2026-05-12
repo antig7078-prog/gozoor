@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Leaf, LogIn, LayoutDashboard, ShoppingCart, Menu, X, Home, Compass, ShoppingBag, Briefcase, MonitorPlay } from 'lucide-react';
+import { Leaf, LogIn, LayoutDashboard, ShoppingCart, Menu, X, Home, Compass, ShoppingBag, Briefcase, Users } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../lib/store/cartStore';
@@ -16,12 +16,14 @@ export const PublicBrowseLayout = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { totalItems } = useCartStore();
 
+    // The layout handles both logged-in and guest users perfectly in the JSX
+
     const navLinks = [
         { name: 'الرئيسية', href: '/', icon: Home },
         { name: 'الدورات', href: '/courses', icon: Compass },
         { name: 'المتجر', href: '/marketplace', icon: ShoppingBag },
-        { name: 'الوظائف', href: '/jobs', icon: Briefcase },
-        { name: 'خدمات المستقلين', href: '/services', icon: MonitorPlay },
+        { name: 'المجتمع الزراعي', href: '/community', icon: Users },
+        { name: 'الوظائف والعمل الحر', href: '/careers', icon: Briefcase },
     ];
 
     const isActive = (href: string) => {
@@ -49,11 +51,10 @@ export const PublicBrowseLayout = () => {
                                 <Link
                                     key={link.href}
                                     to={link.href}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ${
-                                        isActive(link.href)
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ${isActive(link.href)
                                             ? 'bg-brand-primary/10 text-brand-primary'
                                             : 'text-text-secondary hover:text-brand-primary hover:bg-surface-primary'
-                                    }`}
+                                        }`}
                                 >
                                     <link.icon className="w-4 h-4" />
                                     {link.name}
@@ -123,11 +124,10 @@ export const PublicBrowseLayout = () => {
                                         key={link.href}
                                         to={link.href}
                                         onClick={() => setMobileMenuOpen(false)}
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                                            isActive(link.href)
+                                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${isActive(link.href)
                                                 ? 'bg-brand-primary/10 text-brand-primary'
                                                 : 'text-text-secondary hover:text-brand-primary hover:bg-surface-primary'
-                                        }`}
+                                            }`}
                                     >
                                         <link.icon className="w-5 h-5" />
                                         {link.name}

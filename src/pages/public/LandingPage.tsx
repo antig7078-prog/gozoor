@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, type Variants, AnimatePresence } from 'framer-motion';
 import {
-    BookOpen, Store, MonitorPlay, Briefcase,
+    BookOpen, Store, Briefcase,
     ArrowLeft, Leaf, Star,
     ShieldCheck, Users, PlayCircle,
     ChevronLeft, ShoppingBag,
@@ -102,7 +102,8 @@ export const LandingPage = () => {
                             { label: 'الرئيسية', to: '/' },
                             { label: 'الأكاديمية', to: '/courses' },
                             { label: 'المتجر', to: '/marketplace' },
-                            { label: 'المستقلين', to: '/services' },
+                            { label: 'الوظائف والعمل الحر', to: '/careers' },
+                            { label: 'المجتمع', to: '/community' },
                         ].map((item, i) => (
                             <Link key={i} to={item.to} className="text-sm font-bold text-brand-primary-light/80 hover:text-brand-primary transition-colors">{item.label}</Link>
                         ))}
@@ -160,7 +161,8 @@ export const LandingPage = () => {
                                     { label: 'الرئيسية', to: '/' },
                                     { label: 'الأكاديمية', to: '/courses' },
                                     { label: 'المتجر', to: '/marketplace' },
-                                    { label: 'المستقلين', to: '/services' },
+                                    { label: 'الوظائف والعمل الحر', to: '/careers' },
+                                    { label: 'المجتمع', to: '/community' },
                                 ].map((item, i) => (
                                     <Link
                                         key={i}
@@ -298,7 +300,7 @@ export const LandingPage = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(250px,auto)]">
-                        {/* Large Bento Box - Education */}
+                        {/* Large Bento Box - Education / الطلاب والخريجين */}
                         <Link to="/courses" className="md:col-span-2 md:row-span-2 group relative rounded-card overflow-hidden p-6 sm:p-10 md:p-12 flex flex-col justify-end shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_50px_rgba(16,185,129,0.15)] transition-all duration-500 border border-white/[0.08] min-h-[400px] md:min-h-0">
                             <div className="absolute inset-0 bg-brand-bg"></div>
                             <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-105 group-hover:opacity-40 transition-all duration-700" style={{ backgroundImage: `url(${academyBanner})` }}></div>
@@ -308,7 +310,7 @@ export const LandingPage = () => {
                                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-brand-primary mb-4 sm:mb-6 border border-white/20 group-hover:-translate-y-2 transition-transform duration-300">
                                     <BookOpen className="w-6 h-6 sm:w-8 sm:h-8" />
                                 </div>
-                                <h3 className="text-2xl sm:text-4xl md:text-5xl font-black text-white mb-3 sm:mb-4 drop-shadow-lg">أكاديمية جذور للتعليم</h3>
+                                <h3 className="text-2xl sm:text-4xl md:text-5xl font-black text-white mb-3 sm:mb-4 drop-shadow-lg">الطلاب والخريجين</h3>
                                 <p className="text-brand-primary-light/70 text-base sm:text-lg font-medium max-w-md mb-6 sm:mb-8 leading-relaxed">مكتبة ضخمة من الدورات التدريبية المعتمدة لتعلم أحدث أساليب الزراعة المائية والعضوية، مقدمة من كبار الخبراء.</p>
                                 <span className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-white/5 backdrop-blur-md text-white border border-white/10 rounded-xl font-bold group-hover:bg-white/10 transition-colors text-sm sm:text-base">
                                     تصفح الدورات <ArrowLeft className="w-4 h-4 sm:w-5 h-5" />
@@ -316,55 +318,55 @@ export const LandingPage = () => {
                             </div>
                         </Link>
 
-                        {/* Marketplace */}
-                        <Link to="/marketplace" className="md:col-span-1 md:row-span-1 group bg-gradient-to-br from-brand-primary-hover/40 to-brand-bg/40 backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:border-brand-primary/30 transition-all duration-500 hover:-translate-y-1">
-                            <div className="absolute top-[-20%] left-[-20%] w-[150%] h-[150%] bg-white/5 rotate-12 blur-2xl group-hover:rotate-45 transition-all duration-700 pointer-events-none"></div>
+                        {/* المجتمع الزراعي */}
+                        <Link to="/community" className="md:col-span-1 md:row-span-1 group bg-gradient-to-br from-emerald-900/40 to-brand-bg/40 backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:border-emerald-500/30 transition-all duration-500 hover:-translate-y-1">
+                            <div className="absolute top-[-20%] left-[-20%] w-[150%] h-[150%] bg-emerald-500/5 rotate-12 blur-2xl group-hover:rotate-45 transition-all duration-700 pointer-events-none"></div>
                             <div className="relative z-10 flex flex-col h-full">
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-brand-primary/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-brand-primary mb-auto border border-brand-primary/20 shadow-inner">
-                                    <Store className="w-6 h-6 sm:w-7 sm:h-7" />
+                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-emerald-400 mb-auto border border-emerald-500/20 shadow-inner group-hover:scale-110 transition-transform">
+                                    <Users className="w-6 h-6 sm:w-7 sm:h-7" />
                                 </div>
                                 <div className="mt-6 sm:mt-8">
-                                    <h4 className="text-2xl sm:text-3xl font-black text-white mb-2 sm:mb-3">سوق المزارعين</h4>
-                                    <p className="text-brand-primary-light/70 text-sm sm:text-base font-medium leading-relaxed">أفضل البذور والأدوات الزراعية بجودة مضمونة وتوصيل سريع.</p>
+                                    <h4 className="text-2xl sm:text-3xl font-black text-white mb-2 sm:mb-3">المجتمع الزراعي</h4>
+                                    <p className="text-brand-primary-light/70 text-sm sm:text-base font-medium leading-relaxed">شارك خبراتك وتجاربك مع المجتمع الزراعي وتعلّم من الآخرين.</p>
                                 </div>
                             </div>
                         </Link>
 
-                        {/* Jobs */}
-                        <Link to="/jobs" className="md:col-span-1 md:row-span-1 group bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-card p-8 overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:border-blue-500/30 transition-all duration-500 hover:-translate-y-1">
+                        {/* الوظائف والعمل الحر */}
+                        <Link to="/careers" className="md:col-span-1 md:row-span-1 group bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:border-blue-500/30 transition-all duration-500 hover:-translate-y-1">
                             <div className="relative z-10 flex flex-col h-full">
-                                <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 mb-auto border border-blue-500/20 group-hover:scale-110 transition-transform">
-                                    <Briefcase className="w-7 h-7" />
+                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 mb-auto border border-blue-500/20 group-hover:scale-110 transition-transform">
+                                    <Briefcase className="w-6 h-6 sm:w-7 sm:h-7" />
                                 </div>
-                                <div className="mt-8">
-                                    <h4 className="text-3xl font-black text-white mb-3">فرص العمل</h4>
-                                    <p className="text-brand-primary-light/70 text-base font-medium leading-relaxed mb-4">اكتشف أحدث الوظائف المتاحة في كبرى المزارع والمؤسسات.</p>
+                                <div className="mt-6 sm:mt-8">
+                                    <h4 className="text-2xl sm:text-3xl font-black text-white mb-2 sm:mb-3">الوظائف والعمل الحر</h4>
+                                    <p className="text-brand-primary-light/70 text-sm sm:text-base font-medium leading-relaxed mb-4">وظائف وفرص عمل حر — خدمات ومنتجات من المستقلين.</p>
                                     <span className="inline-flex items-center text-blue-400 font-bold text-sm">
-                                        المزيد <ChevronLeft className="w-4 h-4 ml-1" />
+                                        اكتشف المزيد <ChevronLeft className="w-4 h-4 ml-1" />
                                     </span>
                                 </div>
                             </div>
                         </Link>
 
-                        {/* Freelance */}
-                        <Link to="/services" className="md:col-span-3 md:row-span-1 group bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 md:p-12 flex flex-col lg:flex-row items-center gap-8 sm:gap-10 hover:bg-white/[0.05] hover:shadow-[0_0_50px_rgba(16,185,129,0.15)] hover:border-brand-primary/20 transition-all duration-500 overflow-hidden relative">
+                        {/* المتجر - Full Width */}
+                        <Link to="/marketplace" className="md:col-span-3 md:row-span-1 group bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 md:p-12 flex flex-col lg:flex-row items-center gap-8 sm:gap-10 hover:bg-white/[0.05] hover:shadow-[0_0_50px_rgba(16,185,129,0.15)] hover:border-brand-primary/20 transition-all duration-500 overflow-hidden relative">
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                             <div className="w-full lg:w-2/5 h-48 sm:h-64 lg:h-full bg-black/40 rounded-3xl overflow-hidden shrink-0 relative shadow-inner border border-white/5">
-                                <img src={freelanceServices} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100" alt="خدمات المستقلين الزراعية" />
+                                <img src={freelanceServices} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100" alt="سوق المزارعين" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-brand-bg/80 to-transparent"></div>
                             </div>
                             <div className="flex-1 text-center lg:text-right relative z-10">
                                 <div className="mb-4 sm:mb-6 flex justify-center lg:justify-start">
                                     <Badge variant="premium" size="md">
-                                        <MonitorPlay className="w-4 h-4 sm:w-5 sm:h-5 ml-2" /> سوق مستقلين الزراعة
+                                        <Store className="w-4 h-4 sm:w-5 sm:h-5 ml-2" /> المتجر الزراعي
                                     </Badge>
                                 </div>
-                                <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-4 sm:mb-6 leading-tight">اطلب الخدمات والاستشارات<br className="hidden sm:block" /> مباشرة من الخبراء</h3>
+                                <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-4 sm:mb-6 leading-tight">أفضل البذور والأدوات الزراعية<br className="hidden sm:block" /> بجودة مضمونة</h3>
                                 <p className="text-brand-primary-light/60 font-medium text-base sm:text-lg leading-relaxed mb-6 sm:mb-8 max-w-2xl mx-auto lg:mx-0">
-                                    تواصل مع نخبة من المهندسين الزراعيين والمستشارين لطلب دراسات جدوى، استشارات فنية، وخدمات تصميم الحدائق واللاندسكيب لتنفيذ مشاريعك بدقة.
+                                    تسوّق من مجموعة واسعة من المنتجات الزراعية المضمونة — بذور، أسمدة، أدوات، ومعدات بأفضل الأسعار وتوصيل سريع لحد باب بيتك.
                                 </p>
                                 <Button variant="outline" className="w-full sm:w-auto text-white border-white/10 hover:bg-brand-primary hover:border-brand-primary" icon={ArrowLeft} iconPosition="right">
-                                    تصفح الخدمات المطروحة
+                                    تصفح المنتجات
                                 </Button>
                             </div>
                         </Link>
@@ -496,8 +498,8 @@ export const LandingPage = () => {
                             <ul className="space-y-3 sm:space-y-4 font-medium text-brand-primary-light/80 text-sm sm:text-base">
                                 <li><Link to="/courses" className="hover:text-brand-primary transition-colors inline-block">الدورات التعليمية</Link></li>
                                 <li><Link to="/marketplace" className="hover:text-brand-primary transition-colors inline-block">السوق الزراعي</Link></li>
-                                <li><Link to="/jobs" className="hover:text-brand-primary transition-colors inline-block">الوظائف الشاغرة</Link></li>
-                                <li><Link to="/services" className="hover:text-brand-primary transition-colors inline-block">خدمات المستقلين</Link></li>
+                                <li><Link to="/careers" className="hover:text-brand-primary transition-colors inline-block">الوظائف والعمل الحر</Link></li>
+                                <li><Link to="/community" className="hover:text-brand-primary transition-colors inline-block">المجتمع الزراعي</Link></li>
                             </ul>
                         </div>
 

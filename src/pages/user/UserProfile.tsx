@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { User, Mail, Save, Camera, Trophy, BookOpen } from 'lucide-react';
+import { User, Mail, Save, Camera, Trophy, BookOpen, Phone, MessageCircle, Globe, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageContainer } from '../../components/shared/PageContainer';
 import { PageHeader } from '../../components/shared/PageHeader';
@@ -17,6 +17,11 @@ export const UserProfile = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [fullName, setFullName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [whatsapp, setWhatsapp] = useState('');
+    const [bio, setBio] = useState('');
+    const [specialization, setSpecialization] = useState('');
+    const [portfolioUrl, setPortfolioUrl] = useState('');
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -24,12 +29,17 @@ export const UserProfile = () => {
             try {
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('full_name')
+                    .select('full_name, phone, whatsapp, bio, specialization, portfolio_url')
                     .eq('id', user.id)
                     .single();
 
                 if (error) throw error;
                 setFullName(data?.full_name || '');
+                setPhone(data?.phone || '');
+                setWhatsapp(data?.whatsapp || '');
+                setBio(data?.bio || '');
+                setSpecialization(data?.specialization || '');
+                setPortfolioUrl(data?.portfolio_url || '');
             } catch (error: any) {
                 console.error(error.message);
             } finally {
@@ -48,7 +58,14 @@ export const UserProfile = () => {
         try {
             const { error } = await supabase
                 .from('profiles')
-                .update({ full_name: fullName })
+                .update({ 
+                    full_name: fullName,
+                    phone: phone,
+                    whatsapp: whatsapp,
+                    bio: bio,
+                    specialization: specialization,
+                    portfolio_url: portfolioUrl
+                })
                 .eq('id', user.id);
 
             if (error) throw error;
@@ -150,6 +167,52 @@ export const UserProfile = () => {
                                     helperText="لا يمكن تغيير البريد الإلكتروني لدواعي أمنية."
                                     className="cursor-not-allowed"
                                 />
+
+                                <Input
+                                    label="رقم الهاتف"
+                                    icon={Phone}
+                                    placeholder="ادخل رقم هاتفك"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                />
+
+                                <Input
+                                    label="رقم الواتساب"
+                                    icon={MessageCircle}
+                                    placeholder="ادخل رقم الواتساب الخاص بك"
+                                    value={whatsapp}
+                                    onChange={(e) => setWhatsapp(e.target.value)}
+                                />
+
+                                <Input
+                                    label="التخصص المهني"
+                                    icon={Briefcase}
+                                    placeholder="مثال: مصمم جرافيك، مبرمج ويب، كاتب محتوى"
+                                    value={specialization}
+                                    onChange={(e) => setSpecialization(e.target.value)}
+                                />
+
+                                <Input
+                                    label="رابط معرض الأعمال (Portfolio)"
+                                    icon={Globe}
+                                    placeholder="https://behance.net/username"
+                                    value={portfolioUrl}
+                                    onChange={(e) => setPortfolioUrl(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-black text-text-secondary flex items-center gap-2 mb-2">
+                                    <FileText className="w-4 h-4 text-brand-primary" />
+                                    نبذة تعريفية (Bio)
+                                </label>
+                                <textarea
+                                    className="w-full min-h-[150px] p-4 rounded-2xl border border-slate-100 bg-slate-50/30 focus:bg-white focus:border-brand-primary/30 focus:ring-4 focus:ring-brand-primary/5 transition-all font-bold text-slate-700 outline-none resize-none"
+                                    placeholder="اكتب نبذة عن خبراتك ومهاراتك لكي يراها العملاء..."
+                                    value={bio}
+                                    onChange={(e) => setBio(e.target.value)}
+                                />
+                                <p className="text-[10px] text-text-muted font-bold">هذه النبذة ستظهر للعملاء في صفحات الخدمات التي تقدمها.</p>
                             </div>
 
                             <div className="pt-8 border-t border-border-subtle flex justify-end">

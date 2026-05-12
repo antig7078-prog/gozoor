@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../../components/shared/PageHeader';
+import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 
 interface Service {
     id: string;
@@ -22,6 +23,11 @@ export const UserServices = () => {
     const { user } = useAuth();
     const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; serviceId: string | null; isLoading: boolean }>({
+        isOpen: false,
+        serviceId: null,
+        isLoading: false
+    });
 
     useEffect(() => {
         const fetchServices = async () => {
@@ -46,15 +52,22 @@ export const UserServices = () => {
     }, [user]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('هل أنت متأكد من حذف هذه الخدمة؟')) return;
+        setDeleteModal({ isOpen: true, serviceId: id, isLoading: false });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteModal.serviceId) return;
+        setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('services').delete().eq('id', id);
+            const { error } = await supabase.from('services').delete().eq('id', deleteModal.serviceId);
             if (error) throw error;
-            toast.success('تم الحذف بنجاح');
-            setServices(services.filter(s => s.id !== id));
+            toast.success('تم حذف الخدمة بنجاح');
+            setServices(services.filter(s => s.id !== deleteModal.serviceId));
+            setDeleteModal({ isOpen: false, serviceId: null, isLoading: false });
         } catch (error: any) {
             toast.error('حدث خطأ أثناء الحذف');
             console.error(error);
+            setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }
     };
 
@@ -87,7 +100,7 @@ export const UserServices = () => {
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-[40px] border border-border-subtle p-20 text-center shadow-2xl shadow-slate-200/50 relative overflow-hidden"
+                        className="bg-white rounded-[40px] border border-slate-100/60 p-20 text-center shadow-2xl shadow-slate-200/40 relative overflow-hidden"
                     >
                         <div className="absolute top-0 right-0 w-32 h-32 bg-surface-primary rounded-bl-full"></div>
                         <div className="relative z-10">
@@ -182,6 +195,18 @@ export const UserServices = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, serviceId: null, isLoading: false })}
+                onConfirm={confirmDelete}
+                isLoading={deleteModal.isLoading}
+                title="حذف الخدمة"
+                message="هل أنت متأكد من حذف هذه الخدمة نهائياً؟ لا يمكن التراجع عن هذا الإجراء."
+                confirmText="حذف الآن"
+                cancelText="تراجع"
+                type="danger"
+            />
         </PageContainer>
     );
 };

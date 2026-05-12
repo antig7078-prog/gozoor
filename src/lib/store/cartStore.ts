@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export interface CartItem {
     id: string; // product id
+    seller_id: string;
     title: string;
     price: number;
     image_url: string;

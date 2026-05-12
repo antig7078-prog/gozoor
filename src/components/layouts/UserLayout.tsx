@@ -11,11 +11,12 @@ import {
     X,
     ShoppingBag,
     Briefcase,
-
     FileText,
     MonitorPlay,
     ShoppingCart,
-    Leaf
+    Leaf,
+    Users,
+    Package
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../lib/store/cartStore';
@@ -78,14 +79,17 @@ export const UserLayout = () => {
 
     const navigation = [
         { name: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'المجتمع الزراعي', href: '/community', icon: Users },
+        { name: 'الوظائف والعمل الحر', href: '/careers', icon: Briefcase },
         { name: 'استكشاف الدورات', href: '/courses', icon: Compass },
         { name: 'دوراتي التعليمية', href: '/my-courses', icon: BookOpen },
         { name: 'المتجر', href: '/marketplace', icon: ShoppingBag },
         { name: 'السلة', href: '/cart', icon: ShoppingCart, badge: totalItems > 0 ? totalItems : null },
-        { name: 'الوظائف', href: '/jobs', icon: Briefcase },
+        { name: 'طلباتي', href: '/market-orders', icon: Package },
+        { name: 'طلبات العملاء', href: '/customer-orders', icon: Users },
+        { name: 'إدارة خدماتي', href: '/user-services', icon: MonitorPlay },
+        { name: 'إدارة منتجاتي', href: '/user-products', icon: Package },
         { name: 'طلبات التوظيف', href: '/my-applications', icon: FileText },
-        { name: 'خدمات المستقلين', href: '/services', icon: MonitorPlay },
-        { name: 'خدماتي', href: '/user-services', icon: MonitorPlay },
         { name: 'الملف الشخصي', href: '/profile', icon: Settings },
     ];
 

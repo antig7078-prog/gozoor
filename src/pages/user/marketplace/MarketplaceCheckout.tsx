@@ -20,6 +20,7 @@ import { supabase } from '../../../lib/supabase';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { Input } from '../../../components/ui/Input';
 import { Card } from '../../../components/shared/Card';
 import { PageHeader } from '../../../components/shared/PageHeader';
 
@@ -30,6 +31,8 @@ export const MarketplaceCheckout = () => {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [shippingAddress, setShippingAddress] = useState('');
+    const [contactNumber, setContactNumber] = useState('');
 
     if (items.length === 0 && !isSuccess) {
         return (
@@ -59,6 +62,11 @@ export const MarketplaceCheckout = () => {
             return;
         }
 
+        if (!shippingAddress.trim() || !contactNumber.trim()) {
+            toast.error('يرجى إدخال عنوان الشحن ورقم التواصل');
+            return;
+        }
+
         setIsProcessing(true);
         try {
             // 1. Create Order
@@ -67,6 +75,8 @@ export const MarketplaceCheckout = () => {
                 .insert([{
                     buyer_id: user.id,
                     total_amount: totalPrice,
+                    shipping_address: shippingAddress,
+                    contact_number: contactNumber,
                     status: 'Pending'
                 }])
                 .select()
@@ -170,6 +180,33 @@ export const MarketplaceCheckout = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
                 {/* Left Side: Payment Details */}
                 <div className="lg:col-span-7 space-y-8">
+                    <Card className="p-10 border-border-subtle relative overflow-hidden" hoverable={false}>
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-brand-primary"></div>
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="p-3 bg-brand-primary/10 rounded-2xl">
+                                <ShoppingBag className="w-8 h-8 text-brand-primary" />
+                            </div>
+                            <h2 className="text-2xl font-black text-text-primary">بيانات الشحن والتوصيل</h2>
+                        </div>
+                        <div className="space-y-6">
+                            <Input
+                                label="عنوان الشحن بالتفصيل"
+                                placeholder="المدينة، الحي، الشارع، رقم المبنى..."
+                                value={shippingAddress}
+                                onChange={(e) => setShippingAddress(e.target.value)}
+                                required
+                            />
+                            <Input
+                                label="رقم الهاتف للتواصل"
+                                placeholder="01xxxxxxxxx"
+                                type="tel"
+                                value={contactNumber}
+                                onChange={(e) => setContactNumber(e.target.value)}
+                                required
+                            />
+                        </div>
+                    </Card>
+
                     <Card className="p-10 border-border-subtle relative overflow-hidden" hoverable={false}>
                         <div className="absolute top-0 left-0 w-1.5 h-full bg-brand-primary"></div>
                         <div className="flex items-center gap-4 mb-8">

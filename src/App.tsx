@@ -17,7 +17,7 @@ const Login = lazy(() => import('./pages/public/Login').then(m => ({ default: m.
 const Signup = lazy(() => import('./pages/public/Signup').then(m => ({ default: m.Signup })));
 const ForgotPassword = lazy(() => import('./pages/public/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
 const AboutUs = lazy(() => import('./pages/public/StaticPages').then(m => ({ default: m.AboutUs })));
-const ContactUs = lazy(() => import('./pages/public/StaticPages').then(m => ({ default: m.ContactUs })));
+const ContactUs = lazy(() => import('./pages/public/ContactPage').then(m => ({ default: m.ContactPage })));
 const Terms = lazy(() => import('./pages/public/StaticPages').then(m => ({ default: m.Terms })));
 const Privacy = lazy(() => import('./pages/public/StaticPages').then(m => ({ default: m.Privacy })));
 const NotFound = lazy(() => import('./pages/public/NotFound').then(m => ({ default: m.NotFound })));
@@ -38,6 +38,7 @@ const ProductDetails = lazy(() => import('./pages/user/marketplace/ProductDetail
 const Cart = lazy(() => import('./pages/user/marketplace/Cart').then(m => ({ default: m.Cart })));
 const MarketplaceCheckout = lazy(() => import('./pages/user/marketplace/MarketplaceCheckout').then(m => ({ default: m.MarketplaceCheckout })));
 const MarketOrders = lazy(() => import('./pages/user/marketplace/MarketOrders').then(m => ({ default: m.MarketOrders })));
+const MerchantOrders = lazy(() => import('./pages/user/marketplace/MerchantOrders').then(m => ({ default: m.MerchantOrders })));
 const UserProducts = lazy(() => import('./pages/user/marketplace/UserProducts').then(m => ({ default: m.UserProducts })));
 const AddProduct = lazy(() => import('./pages/user/marketplace/AddProduct').then(m => ({ default: m.AddProduct })));
 const JobsListingPage = lazy(() => import('./pages/user/jobs/JobsListingPage').then(m => ({ default: m.JobsListingPage })));
@@ -47,6 +48,10 @@ const ServicesPage = lazy(() => import('./pages/user/services/ServicesPage').the
 const ServiceDetails = lazy(() => import('./pages/user/services/ServiceDetails').then(m => ({ default: m.ServiceDetails })));
 const UserServices = lazy(() => import('./pages/user/services/UserServices').then(m => ({ default: m.UserServices })));
 const AddService = lazy(() => import('./pages/user/services/AddService').then(m => ({ default: m.AddService })));
+
+// Lazy loaded new section pages
+const CareersPage = lazy(() => import('./pages/user/careers/CareersPage').then(m => ({ default: m.CareersPage })));
+const CommunityPage = lazy(() => import('./pages/user/community/CommunityPage').then(m => ({ default: m.CommunityPage })));
 
 // Lazy loaded admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
@@ -89,6 +94,8 @@ function App() {
               <Route path="/jobs/:id" element={<JobDetailsPage />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/services/:id" element={<ServiceDetails />} />
+              <Route path="/careers" element={<CareersPage />} />
+              <Route path="/community" element={<CommunityPage />} />
             </Route>
 
             {/* Protected Routes - Users Only (dashboard, personal pages, actions) */}
@@ -100,6 +107,7 @@ function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/marketplace/checkout" element={<MarketplaceCheckout />} />
                 <Route path="/market-orders" element={<MarketOrders />} />
+                <Route path="/customer-orders" element={<MerchantOrders />} />
                 <Route path="/user-products" element={<UserProducts />} />
                 <Route path="/marketplace/add" element={<AddProduct />} />
                 <Route path="/my-applications" element={<MyApplications />} />

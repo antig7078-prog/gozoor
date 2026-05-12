@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../../components/shared/PageHeader';
+import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 
 interface Product {
     id: string;
@@ -23,6 +24,11 @@ export const UserProducts = () => {
     const { user } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; productId: string | null; isLoading: boolean }>({
+        isOpen: false,
+        productId: null,
+        isLoading: false
+    });
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -47,15 +53,22 @@ export const UserProducts = () => {
     }, [user]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('هل أنت متأكد من حذف هذا المنتج نهائياً من المتجر؟')) return;
+        setDeleteModal({ isOpen: true, productId: id, isLoading: false });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteModal.productId) return;
+        setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('products').delete().eq('id', id);
+            const { error } = await supabase.from('products').delete().eq('id', deleteModal.productId);
             if (error) throw error;
             toast.success('تم حذف المنتج بنجاح');
-            setProducts(products.filter(p => p.id !== id));
+            setProducts(products.filter(p => p.id !== deleteModal.productId));
+            setDeleteModal({ isOpen: false, productId: null, isLoading: false });
         } catch (error: any) {
             toast.error('حدث خطأ أثناء الحذف');
             console.error(error);
+            setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }
     };
 
@@ -106,7 +119,7 @@ export const UserProducts = () => {
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ delay: idx * 0.05 }}
                                 key={product.id} 
-                                className="bg-white rounded-[var(--radius-card)] border border-border-subtle shadow-sm hover:shadow-2xl transition-all overflow-hidden flex flex-col group relative"
+                                className="bg-white rounded-[40px] border border-slate-100/60 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 overflow-hidden flex flex-col group relative"
                             >
                                 {/* Stock Badge */}
                                 <div className={`absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-sm border ${
@@ -188,6 +201,18 @@ export const UserProducts = () => {
                     </AnimatePresence>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, productId: null, isLoading: false })}
+                onConfirm={confirmDelete}
+                isLoading={deleteModal.isLoading}
+                title="حذف المنتج"
+                message="هل أنت متأكد من حذف هذا المنتج نهائياً؟ لا يمكن التراجع عن هذا الإجراء."
+                confirmText="حذف الآن"
+                cancelText="تراجع"
+                type="danger"
+            />
         </PageContainer>
     );
 };

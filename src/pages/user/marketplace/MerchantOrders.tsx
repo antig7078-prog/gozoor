@@ -1,0 +1,285 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import { Package, Clock, CheckCircle2, XCircle, Truck, ShoppingBag, Hash, Calendar, Tag, User, MessageCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { PageContainer } from '../../../components/shared/PageContainer';
+import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { PageHeader } from '../../../components/shared/PageHeader';
+import { toast } from 'react-hot-toast';
+
+interface OrderItem {
+    id: string;
+    quantity: number;
+    price_at_purchase: number;
+    product_id: string;
+    products: { 
+        title: string; 
+        image_url: string;
+    };
+}
+
+interface Order {
+    id: string;
+    created_at: string;
+    status: string;
+    total_amount: number;
+    buyer: {
+        full_name: string;
+        phone: string;
+        whatsapp: string;
+    };
+    items: OrderItem[];
+}
+
+export const MerchantOrders = () => {
+    const { user } = useAuth();
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchMerchantOrders = async () => {
+        if (!user) return;
+        try {
+            // First, find all products belonging to this seller
+            const { data: myProducts } = await supabase
+                .from('products')
+                .select('id')
+                .eq('seller_id', user.id);
+
+            if (!myProducts || myProducts.length === 0) {
+                setOrders([]);
+                return;
+            }
+
+            const productIds = myProducts.map(p => p.id);
+
+            // Fetch order items for these products
+            const { data: orderItems, error: itemsError } = await supabase
+                .from('order_items')
+                .select(`
+                    id, 
+                    order_id, 
+                    quantity, 
+                    price_at_purchase, 
+                    product_id,
+                    products ( title, image_url )
+                `)
+                .in('product_id', productIds);
+
+            if (itemsError) throw itemsError;
+
+            if (orderItems && orderItems.length > 0) {
+                const orderIds = Array.from(new Set(orderItems.map(item => item.order_id)));
+
+                // Fetch the actual orders and buyer info
+                const { data: ordersData, error: ordersError } = await supabase
+                    .from('orders')
+                    .select(`
+                        id, 
+                        created_at, 
+                        status, 
+                        total_amount,
+                        buyer:profiles!orders_buyer_id_fkey ( full_name, phone, whatsapp )
+                    `)
+                    .in('id', orderIds)
+                    .order('created_at', { ascending: false });
+
+                if (ordersError) throw ordersError;
+
+                // Group items by order
+                const formattedOrders = ordersData.map((order: any) => ({
+                    ...order,
+                    items: orderItems.filter(item => item.order_id === order.id)
+                }));
+
+                setOrders(formattedOrders);
+            }
+        } catch (error) {
+            console.error('Error fetching merchant orders:', error);
+            toast.error('حدث خطأ أثناء تحميل الطلبات');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchMerchantOrders();
+    }, [user]);
+
+    const updateOrderStatus = async (orderId: string, newStatus: string) => {
+        try {
+            const { error } = await supabase
+                .from('orders')
+                .update({ status: newStatus })
+                .eq('id', orderId);
+
+            if (error) throw error;
+            toast.success('تم تحديث حالة الطلب بنجاح');
+            fetchMerchantOrders();
+        } catch (error) {
+            console.error('Error updating order status:', error);
+            toast.error('فشل تحديث حالة الطلب');
+        }
+    };
+
+    const getStatusStyles = (status: string) => {
+        switch (status) {
+            case 'Pending': return 'bg-amber-50 text-amber-600 border-amber-100';
+            case 'Paid': return 'bg-blue-50 text-blue-600 border-blue-100';
+            case 'Shipped': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+            case 'Delivered': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'Cancelled': return 'bg-red-50 text-red-600 border-red-100';
+            default: return 'bg-slate-50 text-slate-600 border-slate-100';
+        }
+    };
+
+    if (loading) {
+        return <LoadingSpinner fullPage message="جاري تحميل طلبات عملائك..." />;
+    }
+
+    return (
+        <PageContainer maxWidth="lg">
+            <PageHeader 
+                title="إدارة طلبات العملاء"
+                description="تابع طلبات الشراء الواردة لمنتجاتك وتواصل مع عملائك"
+                icon={ShoppingBag}
+            />
+
+            {orders.length === 0 ? (
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white rounded-[var(--radius-card)] border border-border-subtle p-20 text-center shadow-sm"
+                >
+                    <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Package className="w-12 h-12 text-slate-200" />
+                    </div>
+                    <h3 className="text-2xl font-black text-text-primary mb-2">لا توجد طلبات حتى الآن</h3>
+                    <p className="text-text-muted font-bold">بمجرد قيام العملاء بشراء منتجاتك، ستظهر طلباتهم هنا.</p>
+                </motion.div>
+            ) : (
+                <div className="space-y-8">
+                    {orders.map((order, idx) => (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            key={order.id} 
+                            className="bg-white rounded-[var(--radius-card)] border border-border-subtle shadow-sm overflow-hidden"
+                        >
+                            {/* Order Header */}
+                            <div className="p-6 bg-slate-50/50 border-b border-border-subtle flex flex-wrap items-center justify-between gap-6">
+                                <div className="flex items-center gap-8">
+                                    <div>
+                                        <div className="text-[10px] text-text-muted font-black uppercase tracking-widest mb-1 flex items-center gap-1">
+                                            <Hash className="w-3 h-3" /> رقم الطلب
+                                        </div>
+                                        <div className="font-black text-text-primary uppercase">#{order.id.split('-')[0]}</div>
+                                    </div>
+                                    <div className="h-10 w-px bg-slate-200"></div>
+                                    <div>
+                                        <div className="text-[10px] text-text-muted font-black uppercase tracking-widest mb-1 flex items-center gap-1">
+                                            <Calendar className="w-3 h-3" /> التاريخ
+                                        </div>
+                                        <div className="font-bold text-text-primary">
+                                            {new Date(order.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' })}
+                                        </div>
+                                    </div>
+                                    <div className="h-10 w-px bg-slate-200"></div>
+                                    <div>
+                                        <div className="text-[10px] text-text-muted font-black uppercase tracking-widest mb-1 flex items-center gap-1">
+                                            <User className="w-3 h-3" /> العميل
+                                        </div>
+                                        <div className="font-bold text-text-primary">{order.buyer?.full_name || 'عميل مجهول'}</div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <div className={`px-4 py-1.5 rounded-full text-xs font-black border ${getStatusStyles(order.status)}`}>
+                                        {order.status}
+                                    </div>
+                                    <select 
+                                        className="bg-white border border-border-subtle rounded-xl px-4 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                                        value={order.status}
+                                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                                    >
+                                        <option value="Pending">قيد المراجعة</option>
+                                        <option value="Paid">تم الدفع</option>
+                                        <option value="Shipped">تم الشحن</option>
+                                        <option value="Delivered">تم التوصيل</option>
+                                        <option value="Cancelled">ملغي</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Order Content */}
+                            <div className="p-6">
+                                <div className="grid lg:grid-cols-3 gap-8">
+                                    {/* Items List */}
+                                    <div className="lg:col-span-2 space-y-4">
+                                        <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mb-2">المنتجات المطلوبة</p>
+                                        {order.items.map((item) => (
+                                            <div key={item.id} className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-100 group hover:border-brand-primary/20 transition-all">
+                                                <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-50 flex-shrink-0">
+                                                    <img src={item.products?.image_url} alt={item.products?.title} className="w-full h-full object-cover" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-black text-text-primary text-sm">{item.products?.title}</h4>
+                                                    <div className="text-[10px] font-bold text-text-muted mt-1">
+                                                        الكمية: {item.quantity} × {item.price_at_purchase} ج.م
+                                                    </div>
+                                                </div>
+                                                <div className="font-black text-text-primary">
+                                                    {item.quantity * item.price_at_purchase} ج.م
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Buyer Contact & Summary */}
+                                    <div className="bg-slate-50 rounded-3xl p-6 flex flex-col justify-between">
+                                        <div>
+                                            <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mb-4">التواصل مع العميل</p>
+                                            <div className="space-y-3">
+                                                {order.buyer?.whatsapp && (
+                                                    <a 
+                                                        href={`https://wa.me/${order.buyer.whatsapp}`} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-3 w-full p-3 bg-emerald-500 text-white rounded-2xl font-black text-xs hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10"
+                                                    >
+                                                        <MessageCircle className="w-4 h-4" />
+                                                        واتساب العميل
+                                                    </a>
+                                                )}
+                                                {order.buyer?.phone && (
+                                                    <a 
+                                                        href={`tel:${order.buyer.phone}`}
+                                                        className="flex items-center gap-3 w-full p-3 bg-white border border-border-subtle text-text-primary rounded-2xl font-black text-xs hover:bg-slate-50 transition-all shadow-sm"
+                                                    >
+                                                        <Clock className="w-4 h-4 text-brand-primary" />
+                                                        اتصال هاتفي
+                                                    </a>
+                                                )}
+                                                {!order.buyer?.phone && !order.buyer?.whatsapp && (
+                                                    <p className="text-xs font-bold text-text-muted italic">لا توجد بيانات تواصل متاحة</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-8 pt-6 border-t border-slate-200">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs font-bold text-text-muted">إجمالي قيمة الطلب</span>
+                                                <span className="text-xl font-black text-brand-primary">{order.total_amount} ج.م</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+        </PageContainer>
+    );
+};

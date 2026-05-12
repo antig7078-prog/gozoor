@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MonitorPlay, ShoppingCart, ChevronRight, Star, Clock, ShieldCheck, CheckCircle2, Share2, Heart, Award, Zap } from 'lucide-react';
+import { MonitorPlay, ShoppingCart, ChevronRight, Star, Clock, ShieldCheck, CheckCircle2, Share2, Heart, Award, Zap, Globe, Briefcase, FileText, User } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { useCartStore } from '../../../lib/store/cartStore';
@@ -18,6 +18,13 @@ interface Service {
     delivery_time_days: number;
     image_url: string;
     created_at: string;
+    provider?: {
+        full_name: string;
+        bio: string;
+        specialization: string;
+        portfolio_url: string;
+        avatar_url: string;
+    };
 }
 
 export const ServiceDetails = () => {
@@ -34,12 +41,12 @@ export const ServiceDetails = () => {
             try {
                 const { data, error } = await supabase
                     .from('services')
-                    .select('*')
+                    .select('*, provider:profiles(full_name, bio, specialization, portfolio_url, avatar_url)')
                     .eq('id', id)
                     .single();
 
                 if (error) throw error;
-                if (data) setService(data);
+                if (data) setService(data as any);
             } catch (error) {
                 console.error('Error fetching service details:', error);
             } finally {
@@ -57,7 +64,8 @@ export const ServiceDetails = () => {
             id: service.id,
             title: service.title,
             price: service.price,
-            image_url: service.image_url
+            image_url: service.image_url,
+            seller_id: ''
         });
         toast.success(`تمت إضافة ${service.title} إلى السلة!`);
     };
@@ -75,8 +83,8 @@ export const ServiceDetails = () => {
                     </div>
                     <h2 className="text-3xl font-black text-text-primary mb-4">الخدمة غير موجودة</h2>
                     <p className="text-text-muted font-bold mb-10">عذراً، لم نتمكن من العثور على الخدمة المطلوبة.</p>
-                    <Link 
-                        to="/services" 
+                    <Link
+                        to="/services"
                         className="inline-flex items-center gap-3 px-8 py-4 bg-brand-primary text-white rounded-full font-black shadow-xl shadow-brand-primary/20 hover:scale-105 transition-all"
                     >
                         <ChevronRight className="w-5 h-5" />
@@ -94,8 +102,8 @@ export const ServiceDetails = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="mb-10"
             >
-                <Link 
-                    to="/services" 
+                <Link
+                    to="/services"
                     className="group inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-border-subtle rounded-full text-text-secondary hover:text-brand-primary hover:border-brand-primary/20 font-black text-sm transition-all shadow-sm"
                 >
                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -105,7 +113,7 @@ export const ServiceDetails = () => {
 
             <div className="flex flex-col lg:flex-row gap-10 items-start">
                 {/* Main Content Area */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -138,7 +146,7 @@ export const ServiceDetails = () => {
                     {/* Service Info Header */}
                     <div className="bg-white rounded-[var(--radius-card)] p-10 border border-border-subtle shadow-sm relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-bl-full -mr-16 -mt-16"></div>
-                        
+
                         <div className="flex items-center gap-4 mb-8">
                             <div className="px-5 py-2 bg-brand-primary/10 text-brand-primary rounded-2xl text-xs font-black tracking-widest uppercase flex items-center gap-2">
                                 <Award className="w-4 h-4" />
@@ -205,10 +213,81 @@ export const ServiceDetails = () => {
                             ))}
                         </div>
                     </div>
+
+                    {/* Freelancer Profile Section */}
+                    {service.provider && (
+                        <div className="bg-white rounded-[var(--radius-card)] p-10 border border-border-subtle shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-primary/20 via-brand-primary to-brand-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                            <h2 className="text-2xl font-black text-text-primary mb-10 flex items-center gap-3">
+                                <div className="w-1.5 h-8 bg-brand-primary rounded-full"></div>
+                                عن مقدم الخدمة
+                            </h2>
+
+                            <div className="flex flex-col md:flex-row gap-10 items-start">
+                                {/* Avatar & Primary Info */}
+                                <div className="flex flex-col items-center text-center space-y-4 shrink-0">
+                                    <div className="w-32 h-32 rounded-[30px] bg-slate-50 border-4 border-white shadow-xl flex items-center justify-center overflow-hidden">
+                                        {service.provider.avatar_url ? (
+                                            <img src={service.provider.avatar_url} alt={service.provider.full_name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="w-16 h-16 text-brand-primary" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-text-primary">{service.provider.full_name}</h3>
+                                        <p className="text-brand-primary font-bold text-xs mt-1 uppercase tracking-widest">{service.provider.specialization || 'بائع محترف'}</p>
+                                    </div>
+                                    {service.provider.portfolio_url && (
+                                        <a
+                                            href={service.provider.portfolio_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-primary transition-colors shadow-lg shadow-black/10"
+                                        >
+                                            <Globe className="w-4 h-4" />
+                                            معرض الأعمال
+                                        </a>
+                                    )}
+                                </div>
+
+                                {/* Bio & Skills Summary */}
+                                <div className="flex-1 space-y-8">
+                                    <div className="bg-slate-50/50 rounded-3xl p-8 border border-slate-100">
+                                        <div className="flex items-center gap-2 mb-4 text-slate-400">
+                                            <FileText className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">النبذة التعريفية</span>
+                                        </div>
+                                        <p className="text-slate-600 font-bold leading-[1.7]">
+                                            {service.provider.bio || 'هذا المستخدم لم يقم بإضافة نبذة تعريفية بعد.'}
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        <div className="p-4 rounded-2xl border border-border-subtle flex flex-col items-center text-center">
+                                            <Award className="w-5 h-5 text-brand-primary mb-2" />
+                                            <p className="text-[10px] text-text-muted font-black uppercase tracking-tight">التقييم العام</p>
+                                            <p className="text-lg font-black text-text-primary">5.0/5.0</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl border border-border-subtle flex flex-col items-center text-center">
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-500 mb-2" />
+                                            <p className="text-[10px] text-text-muted font-black uppercase tracking-tight">مشاريع مكتملة</p>
+                                            <p className="text-lg font-black text-text-primary">+50</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl border border-border-subtle flex flex-col items-center text-center">
+                                            <Clock className="w-5 h-5 text-amber-500 mb-2" />
+                                            <p className="text-[10px] text-text-muted font-black uppercase tracking-tight">وقت الاستجابة</p>
+                                            <p className="text-lg font-black text-text-primary">ساعتين</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </motion.div>
 
                 {/* Pricing & Checkout Card (Sticky) */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.2 }}
@@ -216,7 +295,7 @@ export const ServiceDetails = () => {
                 >
                     <div className="bg-white rounded-[40px] border border-border-subtle shadow-2xl shadow-slate-300/50 p-10 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-full h-2 bg-brand-primary"></div>
-                        
+
                         <div className="flex justify-between items-end mb-10">
                             <div className="space-y-1">
                                 <p className="text-[10px] text-text-muted font-black uppercase tracking-widest">السعر الأساسي</p>
@@ -235,7 +314,7 @@ export const ServiceDetails = () => {
                                 </div>
                                 <span className="text-text-primary font-black text-sm">{service.delivery_time_days} أيام</span>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mb-4">ما الذي ستحصل عليه؟</p>
                                 {[
@@ -260,7 +339,7 @@ export const ServiceDetails = () => {
                                 <ShoppingCart className="w-6 h-6 group-hover:-translate-y-1 group-hover:rotate-12 transition-transform" />
                                 طلب الخدمة الآن
                             </button>
-                            
+
                             <div className="flex items-center justify-center gap-3 py-4 text-text-muted font-black text-[10px] uppercase tracking-widest border-t border-slate-50 mt-6">
                                 <ShieldCheck className="w-4 h-4 text-brand-primary" />
                                 دفع آمن عبر المنصة
