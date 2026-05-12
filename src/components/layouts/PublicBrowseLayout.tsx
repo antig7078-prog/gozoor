@@ -4,6 +4,7 @@ import { Leaf, LogIn, LayoutDashboard, ShoppingCart, Menu, X, Home, Compass, Sho
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../lib/store/cartStore';
+import { UserLayout } from './UserLayout';
 
 /**
  * PublicBrowseLayout - A lightweight layout for public browsing pages
@@ -16,7 +17,9 @@ export const PublicBrowseLayout = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { totalItems } = useCartStore();
 
-    // The layout handles both logged-in and guest users perfectly in the JSX
+    if (user) {
+        return <UserLayout />;
+    }
 
     const navLinks = [
         { name: 'الرئيسية', href: '/', icon: Home },
