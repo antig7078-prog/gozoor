@@ -111,7 +111,7 @@ export const UserDashboard = () => {
                             بوابتك للتميز الزراعي
                         </div>
                         <h1 className="text-3xl md:text-5xl font-black leading-tight">
-                            أهلاً بك، {user?.email?.split('@')[0] || 'طالبنا العزيز'}! <span className="inline-block animate-bounce">👋</span>
+                            أهلاً بك، {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'طالبنا العزيز'}! <span className="inline-block animate-bounce">👋</span>
                         </h1>
                         <p className="text-slate-200 text-lg md:text-xl font-bold opacity-80 leading-relaxed">
                             مستعد لمواصلة رحلة التعلم واكتساب مهارات زراعية جديدة؟ نحن هنا لندعم طموحك.
