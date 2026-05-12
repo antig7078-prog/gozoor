@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     MessageCircle, Heart, Send, Image, MoreHorizontal,
-    Trash2, Users, Sparkles, X
+    Trash2, Users, Sparkles, X,
+    AlertTriangle
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -17,6 +18,7 @@ import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 interface Comment {
     id: string;
     post_id: string;
+    parent_id?: string;
     user_id: string;
     content: string;
     created_at: string;
@@ -36,6 +38,7 @@ interface Post {
     user_avatar?: string;
     liked_by?: string[];
     comments?: Comment[];
+    replies?: Record<string, Comment[]>;
 }
 
 import { toast } from 'react-hot-toast';
@@ -69,6 +72,13 @@ export const CommunityPage = () => {
         postId: null,
         isLoading: false
     });
+    const [reportModal, setReportModal] = useState<{ isOpen: boolean; postId: string | null; reason: string; isLoading: boolean }>({
+        isOpen: false,
+        postId: null,
+        reason: '',
+        isLoading: false
+    });
+    const [replyingTo, setReplyingTo] = useState<{ commentId: string; postId: string; userName: string } | null>(null);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -134,27 +144,42 @@ export const CommunityPage = () => {
             if (error) throw error;
 
             if (data) {
-                const formattedPosts: Post[] = data.map((post: any) => ({
-                    id: post.id,
-                    user_id: post.user_id,
-                    content: post.content,
-                    image_url: post.image_url,
-                    likes_count: post.likes_count,
-                    comments_count: post.comments_count,
-                    created_at: post.created_at,
-                    user_name: post.profiles?.full_name || 'مستخدم',
-                    user_avatar: post.profiles?.avatar_url || '',
-                    liked_by: post.post_likes.map((l: any) => l.user_id),
-                    comments: post.post_comments.map((c: any) => ({
+                const formattedPosts: Post[] = data.map((post: any) => {
+                    const allComments = post.post_comments.map((c: any) => ({
                         id: c.id,
                         post_id: c.post_id,
+                        parent_id: c.parent_id,
                         user_id: c.user_id,
                         content: c.content,
                         created_at: c.created_at,
                         user_name: c.profiles?.full_name || 'مستخدم',
                         user_avatar: c.profiles?.avatar_url || '',
-                    }))
-                }));
+                    }));
+
+                    const mainComments = allComments.filter((c: any) => !c.parent_id);
+                    const replies: Record<string, Comment[]> = {};
+                    allComments.forEach((c: any) => {
+                        if (c.parent_id) {
+                            if (!replies[c.parent_id]) replies[c.parent_id] = [];
+                            replies[c.parent_id].push(c);
+                        }
+                    });
+
+                    return {
+                        id: post.id,
+                        user_id: post.user_id,
+                        content: post.content,
+                        image_url: post.image_url,
+                        likes_count: post.likes_count,
+                        comments_count: post.comments_count,
+                        created_at: post.created_at,
+                        user_name: post.profiles?.full_name || 'مستخدم',
+                        user_avatar: post.profiles?.avatar_url || '',
+                        liked_by: post.post_likes.map((l: any) => l.user_id),
+                        comments: mainComments,
+                        replies
+                    };
+                });
                 setPosts(formattedPosts);
             }
         } catch (error) {
@@ -191,7 +216,7 @@ export const CommunityPage = () => {
             }]);
 
             if (error) throw error;
-            
+
             setNewPostContent('');
             removeImage();
             fetchPosts();
@@ -219,7 +244,7 @@ export const CommunityPage = () => {
                     .from('post_likes')
                     .delete()
                     .match({ post_id: postId, user_id: userId });
-                
+
                 if (deleteError) throw deleteError;
 
                 // Update count
@@ -229,17 +254,17 @@ export const CommunityPage = () => {
                 const { error: insertError } = await supabase
                     .from('post_likes')
                     .insert([{ post_id: postId, user_id: userId }]);
-                
+
                 if (insertError) throw insertError;
 
                 // Update count
                 await supabase.rpc('increment_likes', { post_id_val: postId });
             }
-            
+
             // Refresh posts locally for better UX
             setPosts(prev => prev.map(p => {
                 if (p.id !== postId) return p;
-                const newLikedBy = isLiked 
+                const newLikedBy = isLiked
                     ? (p.liked_by || []).filter(id => id !== userId)
                     : [...(p.liked_by || []), userId];
                 return {
@@ -266,6 +291,7 @@ export const CommunityPage = () => {
                 .insert([{
                     post_id: postId,
                     user_id: user.id,
+                    parent_id: replyingTo?.postId === postId ? replyingTo.commentId : null,
                     content
                 }]);
 
@@ -275,11 +301,39 @@ export const CommunityPage = () => {
             await supabase.rpc('increment_comments', { post_id_val: postId });
 
             setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+            setReplyingTo(null);
             fetchPosts();
-            toast.success('تم إضافة التعليق');
+            toast.success(replyingTo ? 'تم إضافة الرد' : 'تم إضافة التعليق');
         } catch (error) {
             console.error('Error adding comment:', error);
             toast.error('حدث خطأ أثناء التعليق');
+        }
+    };
+
+    const handleReportPost = (postId: string) => {
+        if (!requireAuth('سجّل دخولك عشان تقدر تبلّغ عن محتوى 🚩')) return;
+        setReportModal({ isOpen: true, postId, reason: '', isLoading: false });
+    };
+
+    const confirmReportPost = async () => {
+        if (!reportModal.postId || !reportModal.reason.trim()) {
+            toast.error('يرجى كتابة سبب البلاغ');
+            return;
+        }
+        setReportModal(prev => ({ ...prev, isLoading: true }));
+        try {
+            const { error } = await supabase.from('post_reports').insert([{
+                post_id: reportModal.postId,
+                reporter_id: user?.id,
+                reason: reportModal.reason.trim()
+            }]);
+            if (error) throw error;
+            toast.success('تم إرسال البلاغ للادمن للمراجعة');
+            setReportModal({ isOpen: false, postId: null, reason: '', isLoading: false });
+        } catch (error) {
+            console.error('Error reporting post:', error);
+            toast.error('حدث خطأ أثناء إرسال البلاغ');
+            setReportModal(prev => ({ ...prev, isLoading: false }));
         }
     };
 
@@ -326,6 +380,70 @@ export const CommunityPage = () => {
                 description="مكانك لمشاركة الأفكار، طرح الأسئلة، والتواصل مع زملائك في المجال الزراعي."
                 icon={Users}
             />
+
+            {/* Report Modal */}
+            <AnimatePresence>
+                {reportModal.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setReportModal({ isOpen: false, postId: null, reason: '', isLoading: false })}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+                        >
+                            <div className="p-6 sm:p-8">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
+                                        <AlertTriangle className="w-6 h-6 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-text-primary leading-tight">إبلاغ عن محتوى</h3>
+                                        <p className="text-text-muted text-sm font-bold">ساعدنا في الحفاظ على مجتمع آمن</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-text-primary mb-2">سبب الإبلاغ</label>
+                                        <textarea
+                                            value={reportModal.reason}
+                                            onChange={(e) => setReportModal(prev => ({ ...prev, reason: e.target.value }))}
+                                            placeholder="اكتب سبب الإبلاغ هنا..."
+                                            className="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 focus:border-brand-primary focus:ring-0 transition-all font-bold text-sm resize-none"
+                                            rows={4}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mt-8">
+                                    <button
+                                        onClick={() => setReportModal({ isOpen: false, postId: null, reason: '', isLoading: false })}
+                                        className="px-6 py-4 rounded-2xl bg-slate-100 text-text-muted font-black text-sm hover:bg-slate-200 transition-all"
+                                    >
+                                        إلغاء
+                                    </button>
+                                    <button
+                                        onClick={confirmReportPost}
+                                        disabled={reportModal.isLoading || !reportModal.reason.trim()}
+                                        className="px-6 py-4 rounded-2xl bg-brand-primary text-white font-black text-sm hover:bg-brand-primary-hover shadow-lg shadow-brand-primary/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                    >
+                                        {reportModal.isLoading ? (
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : 'إرسال البلاغ'}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Create Post */}
             <motion.div
@@ -424,14 +542,23 @@ export const CommunityPage = () => {
                                             <span className="text-text-muted text-xs font-bold">{timeAgo(post.created_at)}</span>
                                         </div>
                                     </div>
-                                    {isOwner && (
+                                    <div className="flex gap-2">
                                         <button
-                                            onClick={() => handleDeletePost(post.id)}
-                                            className="p-2 rounded-xl text-text-muted hover:text-red-500 hover:bg-red-50 transition-all"
+                                            onClick={() => handleReportPost(post.id)}
+                                            className="p-2 rounded-xl text-text-muted hover:text-amber-500 hover:bg-amber-50 transition-all"
+                                            title="إبلاغ عن محتوى غير لائق"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <AlertTriangle className="w-4 h-4" />
                                         </button>
-                                    )}
+                                        {isOwner && (
+                                            <button
+                                                onClick={() => handleDeletePost(post.id)}
+                                                className="p-2 rounded-xl text-text-muted hover:text-red-500 hover:bg-red-50 transition-all"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Post Content */}
@@ -483,17 +610,57 @@ export const CommunityPage = () => {
                                         >
                                             <div className="mt-5 pt-5 border-t border-border-subtle space-y-4">
                                                 {(post.comments || []).map((comment) => (
-                                                    <div key={comment.id} className="flex gap-3">
-                                                        <div className="w-9 h-9 rounded-full bg-surface-primary flex items-center justify-center text-text-muted font-black text-xs shrink-0">
-                                                            {comment.user_name ? getInitials(comment.user_name) : '؟'}
+                                                    <div key={comment.id} className="space-y-3">
+                                                        <div className="flex gap-3">
+                                                            <div className="w-9 h-9 rounded-full bg-surface-primary flex items-center justify-center text-text-muted font-black text-xs shrink-0">
+                                                                {comment.user_name ? getInitials(comment.user_name) : '؟'}
+                                                            </div>
+                                                            <div className="flex-1 bg-surface-primary rounded-2xl p-3 sm:p-4 relative group">
+                                                                <span className="font-black text-text-primary text-xs block mb-1">{comment.user_name}</span>
+                                                                <p className="text-text-secondary text-xs sm:text-sm font-bold leading-relaxed">{comment.content}</p>
+                                                                <div className="flex items-center gap-4 mt-2">
+                                                                    <span className="text-text-muted text-[10px] font-bold">{timeAgo(comment.created_at)}</span>
+                                                                    {isOwner && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setReplyingTo({ commentId: comment.id, postId: post.id, userName: comment.user_name || '' });
+                                                                                setCommentInputs(prev => ({ ...prev, [post.id]: `@${comment.user_name} ` }));
+                                                                            }}
+                                                                            className="text-brand-primary text-[10px] font-black hover:underline"
+                                                                        >
+                                                                            رد
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex-1 bg-surface-primary rounded-2xl p-3 sm:p-4">
-                                                            <span className="font-black text-text-primary text-xs block mb-1">{comment.user_name}</span>
-                                                            <p className="text-text-secondary text-xs sm:text-sm font-bold leading-relaxed">{comment.content}</p>
-                                                            <span className="text-text-muted text-[10px] font-bold mt-2 block">{timeAgo(comment.created_at)}</span>
-                                                        </div>
+
+                                                        {/* Nested Replies */}
+                                                        {post.replies?.[comment.id]?.map(reply => (
+                                                            <div key={reply.id} className="flex gap-3 mr-8 sm:mr-12">
+                                                                <div className="w-7 h-7 rounded-full bg-brand-primary/5 flex items-center justify-center text-brand-primary font-black text-[10px] shrink-0 border border-brand-primary/10">
+                                                                    {reply.user_name ? getInitials(reply.user_name) : '؟'}
+                                                                </div>
+                                                                <div className="flex-1 bg-brand-primary/5 rounded-2xl p-3 border border-brand-primary/10">
+                                                                    <span className="font-black text-text-primary text-[10px] block mb-1">{reply.user_name}</span>
+                                                                    <p className="text-text-secondary text-xs font-bold leading-relaxed">{reply.content}</p>
+                                                                    <span className="text-text-muted text-[9px] font-bold mt-1 block">{timeAgo(reply.created_at)}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 ))}
+
+                                                {/* Replying Status */}
+                                                {replyingTo && replyingTo.postId === post.id && (
+                                                    <div className="flex items-center justify-between bg-brand-primary/10 px-4 py-2 rounded-xl text-[10px] font-bold text-brand-primary">
+                                                        <span>جاري الرد على: {replyingTo.userName}</span>
+                                                        <button onClick={() => {
+                                                            setReplyingTo(null);
+                                                            setCommentInputs(prev => ({ ...prev, [post.id]: '' }));
+                                                        }}><X className="w-3 h-3" /></button>
+                                                    </div>
+                                                )}
 
                                                 {/* Add Comment */}
                                                 <div className="flex gap-3 items-center">

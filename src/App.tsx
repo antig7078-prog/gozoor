@@ -66,6 +66,9 @@ const ManageJobs = lazy(() => import('./pages/admin/ManageJobs').then(m => ({ de
 const ManageServices = lazy(() => import('./pages/admin/ManageServices').then(m => ({ default: m.ManageServices })));
 const AdminCertificates = lazy(() => import('./pages/admin/AdminCertificates').then(m => ({ default: m.AdminCertificates })));
 const AdminEnrollments = lazy(() => import('./pages/admin/AdminEnrollments').then(m => ({ default: m.AdminEnrollments })));
+const AdminCommunity = lazy(() => import('./pages/admin/AdminCommunity').then(m => ({ default: m.AdminCommunity })));
+const AdminLearningPaths = lazy(() => import('./pages/admin/AdminLearningPaths').then(m => ({ default: m.AdminLearningPaths })));
+const AddLearningPath = lazy(() => import('./pages/admin/AddLearningPath').then(m => ({ default: m.AddLearningPath })));
 
 function App() {
   return (
@@ -134,6 +137,10 @@ function App() {
                 <Route path="/admin/categories" element={<AdminCategories />} />
                 <Route path="/admin/enrollments" element={<AdminEnrollments />} />
                 <Route path="/admin/certificates" element={<AdminCertificates />} />
+                <Route path="/admin/community" element={<AdminCommunity />} />
+                <Route path="/admin/learning-paths" element={<AdminLearningPaths />} />
+                <Route path="/admin/learning-paths/new" element={<AddLearningPath />} />
+                <Route path="/admin/learning-paths/edit/:id" element={<AddLearningPath />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
               </Route>
             </Route>

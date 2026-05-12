@@ -15,7 +15,9 @@ import {
     MonitorPlay,
     CheckCircle2,
     Leaf,
-    Trophy
+    Trophy,
+    MessageCircle,
+    Map
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -79,9 +81,11 @@ export const AdminLayout = () => {
         { name: 'الدورات التعليمية', href: '/admin/courses', icon: BookOpen },
         { name: 'التصنيفات', href: '/admin/categories', icon: Tag },
         { name: 'المنتجات', href: '/admin/products', icon: Store },
+        { name: 'مسارات التعلم', href: '/admin/learning-paths', icon: Map },
         { name: 'الوظائف', href: '/admin/jobs', icon: Briefcase },
         { name: 'الخدمات', href: '/admin/services', icon: MonitorPlay },
         { name: 'المستخدمين', href: '/admin/users', icon: Users },
+        { name: 'إدارة المجتمع', href: '/admin/community', icon: MessageCircle },
         { name: 'طلبات الالتحاق', href: '/admin/enrollments', icon: CheckCircle2 },
         { name: 'طلبات الشهادات', href: '/admin/certificates', icon: Trophy },
         { name: 'الإعدادات', href: '/admin/settings', icon: Settings },

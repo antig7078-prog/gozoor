@@ -252,7 +252,17 @@ CREATE TABLE IF NOT EXISTS public.post_comments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    parent_id UUID REFERENCES public.post_comments(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.post_reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
+    reporter_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'resolved', 'dismissed')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -308,6 +318,16 @@ CREATE POLICY "Users can like/unlike" ON public.post_likes FOR ALL USING (auth.u
 ALTER TABLE public.post_comments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Comments are public" ON public.post_comments FOR SELECT USING (true);
 CREATE POLICY "Users can manage own comments" ON public.post_comments FOR ALL USING (auth.uid() = user_id);
+
+-- سياسات البلاغات
+ALTER TABLE public.post_reports ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can view all reports" ON public.post_reports FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "Users can create reports" ON public.post_reports FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Admins can manage reports" ON public.post_reports FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
 
 -- سياسات الكورسات
 CREATE POLICY "Published courses are public" ON public.courses FOR SELECT USING (status = 'Published');
@@ -379,7 +399,52 @@ CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON public.jobs FOR EACH ROW 
 --     bucket_id = 'uploads' AND auth.role() = 'authenticated'
 -- );
 
--- السماح لصاحب الملف فقط بحذفه
--- CREATE POLICY "Owner Delete" ON storage.objects FOR DELETE USING (
---     bucket_id = 'uploads' AND (auth.uid()::text = owner::text)
--- );
+-- ==========================================
+-- 13. وظائف المساعدة (HELPER FUNCTIONS)
+-- ==========================================
+
+-- وظيفة تحديث التوقيت تلقائياً
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- وظائف عدادات المجتمع
+CREATE OR REPLACE FUNCTION public.increment_likes(post_id_val UUID)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.posts
+    SET likes_count = likes_count + 1
+    WHERE id = post_id_val;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.decrement_likes(post_id_val UUID)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.posts
+    SET likes_count = GREATEST(0, likes_count - 1)
+    WHERE id = post_id_val;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.increment_comments(post_id_val UUID)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.posts
+    SET comments_count = comments_count + 1
+    WHERE id = post_id_val;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.decrement_comments(post_id_val UUID)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.posts
+    SET comments_count = GREATEST(0, comments_count - 1)
+    WHERE id = post_id_val;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
