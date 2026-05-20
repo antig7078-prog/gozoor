@@ -415,6 +415,123 @@ ON public.services FOR ALL
 USING (auth.uid() = freelancer_id)
 WITH CHECK (auth.uid() = freelancer_id);
 
+-- سياسات التصنيفات (CATEGORIES)
+DROP POLICY IF EXISTS "Categories are public" ON public.categories;
+CREATE POLICY "Categories are public" ON public.categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins manage categories" ON public.categories;
+CREATE POLICY "Admins manage categories" ON public.categories FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات التسجيل في الكورسات (ENROLLMENTS)
+DROP POLICY IF EXISTS "Users can view own enrollments" ON public.enrollments;
+CREATE POLICY "Users can view own enrollments" ON public.enrollments FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own enrollments" ON public.enrollments;
+CREATE POLICY "Users can insert own enrollments" ON public.enrollments FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins manage all enrollments" ON public.enrollments;
+CREATE POLICY "Admins manage all enrollments" ON public.enrollments FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات فصول ومحاضرات الكورس (SECTIONS & LECTURES)
+DROP POLICY IF EXISTS "Course sections are public" ON public.course_sections;
+CREATE POLICY "Course sections are public" ON public.course_sections FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins manage course sections" ON public.course_sections;
+CREATE POLICY "Admins manage course sections" ON public.course_sections FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+DROP POLICY IF EXISTS "Course lectures are public" ON public.course_lectures;
+CREATE POLICY "Course lectures are public" ON public.course_lectures FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins manage course lectures" ON public.course_lectures;
+CREATE POLICY "Admins manage course lectures" ON public.course_lectures FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات تقدم المستخدم (USER PROGRESS)
+DROP POLICY IF EXISTS "Users can view own progress" ON public.user_progress;
+CREATE POLICY "Users can view own progress" ON public.user_progress FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage own progress" ON public.user_progress;
+CREATE POLICY "Users can manage own progress" ON public.user_progress FOR ALL USING (auth.uid() = user_id);
+
+-- سياسات طلبات الشهادات (CERTIFICATE REQUESTS)
+DROP POLICY IF EXISTS "Users can view own certificate requests" ON public.certificate_requests;
+CREATE POLICY "Users can view own certificate requests" ON public.certificate_requests FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can create own certificate requests" ON public.certificate_requests;
+CREATE POLICY "Users can create own certificate requests" ON public.certificate_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins manage certificate requests" ON public.certificate_requests;
+CREATE POLICY "Admins manage certificate requests" ON public.certificate_requests FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات الطلبات والمشتريات (ORDERS & ORDER ITEMS)
+DROP POLICY IF EXISTS "Users can view own orders" ON public.orders;
+CREATE POLICY "Users can view own orders" ON public.orders FOR SELECT USING (auth.uid() = buyer_id);
+
+DROP POLICY IF EXISTS "Users can create own orders" ON public.orders;
+CREATE POLICY "Users can create own orders" ON public.orders FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+
+DROP POLICY IF EXISTS "Admins manage all orders" ON public.orders;
+CREATE POLICY "Admins manage all orders" ON public.orders FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+DROP POLICY IF EXISTS "Users can view own order items" ON public.order_items;
+CREATE POLICY "Users can view own order items" ON public.order_items FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.orders WHERE id = order_id AND buyer_id = auth.uid())
+);
+
+DROP POLICY IF EXISTS "Users can create own order items" ON public.order_items;
+CREATE POLICY "Users can create own order items" ON public.order_items FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.orders WHERE id = order_id AND buyer_id = auth.uid())
+);
+
+DROP POLICY IF EXISTS "Admins manage order items" ON public.order_items;
+CREATE POLICY "Admins manage order items" ON public.order_items FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات الوظائف والتقدم للوظائف (JOBS & JOB APPLICATIONS)
+DROP POLICY IF EXISTS "Jobs are public" ON public.jobs;
+CREATE POLICY "Jobs are public" ON public.jobs FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Employers/Admins manage jobs" ON public.jobs;
+CREATE POLICY "Employers/Admins manage jobs" ON public.jobs FOR ALL USING (
+    auth.uid() = employer_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+DROP POLICY IF EXISTS "Users can view relevant job applications" ON public.job_applications;
+CREATE POLICY "Users can view relevant job applications" ON public.job_applications FOR SELECT USING (
+    auth.uid() = applicant_id OR EXISTS (SELECT 1 FROM public.jobs WHERE id = job_id AND employer_id = auth.uid())
+);
+
+DROP POLICY IF EXISTS "Users can submit job applications" ON public.job_applications;
+CREATE POLICY "Users can submit job applications" ON public.job_applications FOR INSERT WITH CHECK (auth.uid() = applicant_id);
+
+DROP POLICY IF EXISTS "Employers/Admins manage job applications" ON public.job_applications;
+CREATE POLICY "Employers/Admins manage job applications" ON public.job_applications FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.jobs WHERE id = job_id AND employer_id = auth.uid()) OR 
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات المفضلة والتقييمات (FAVORITES & REVIEWS)
+DROP POLICY IF EXISTS "Users can manage own favorites" ON public.favorites;
+CREATE POLICY "Users can manage own favorites" ON public.favorites FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Reviews are public" ON public.reviews;
+CREATE POLICY "Reviews are public" ON public.reviews FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can manage own reviews" ON public.reviews;
+CREATE POLICY "Users can manage own reviews" ON public.reviews FOR ALL USING (auth.uid() = user_id);
+
 -- ==========================================
 -- 11. إصلاح المستخدمين الحاليين (FIX EXISTING USERS)
 -- ==========================================
