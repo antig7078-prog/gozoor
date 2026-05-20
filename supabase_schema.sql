@@ -155,6 +155,34 @@ CREATE TABLE IF NOT EXISTS public.certificate_requests (
     UNIQUE(user_id, course_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.learning_paths (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT DEFAULT 'Draft' CHECK (status IN ('Draft', 'Published')),
+    thumbnail_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.learning_path_courses (
+    learning_path_id UUID REFERENCES public.learning_paths(id) ON DELETE CASCADE,
+    course_id UUID REFERENCES public.courses(id) ON DELETE CASCADE,
+    sort_order INTEGER DEFAULT 0,
+    PRIMARY KEY (learning_path_id, course_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.workshops (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    description TEXT,
+    image_url TEXT,
+    attendees_count INTEGER DEFAULT 0,
+    location TEXT DEFAULT 'أونلاين (Zoom)',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ==========================================
 -- 4. المتجر والعمل الحر (MARKETPLACE & FREELANCE)
 -- ==========================================
@@ -209,6 +237,7 @@ CREATE TABLE IF NOT EXISTS public.jobs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     employer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
+    company_name TEXT,
     description TEXT,
     requirements TEXT,
     salary_range TEXT,
@@ -218,6 +247,9 @@ CREATE TABLE IF NOT EXISTS public.jobs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- تأكيد وجود الحقل للنسخ القديمة من الجدول
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS company_name TEXT;
 
 CREATE TABLE IF NOT EXISTS public.job_applications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -307,6 +339,9 @@ ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.learning_paths ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.learning_path_courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workshops ENABLE ROW LEVEL SECURITY;
 
 -- سياسات البروفايلات
 CREATE POLICY "Profiles are public" ON public.profiles FOR SELECT USING (true);
@@ -340,6 +375,24 @@ CREATE POLICY "Admins can manage reports" ON public.post_reports FOR ALL USING (
 -- سياسات الكورسات
 CREATE POLICY "Published courses are public" ON public.courses FOR SELECT USING (status = 'Published');
 CREATE POLICY "Admins manage courses" ON public.courses FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات مسارات التعلم
+CREATE POLICY "Published learning paths are public" ON public.learning_paths FOR SELECT USING (status = 'Published');
+CREATE POLICY "Admins manage learning paths" ON public.learning_paths FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات ربط مسارات التعلم بالكورسات
+CREATE POLICY "Learning path courses are public" ON public.learning_path_courses FOR SELECT USING (true);
+CREATE POLICY "Admins manage learning path courses" ON public.learning_path_courses FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- سياسات الورش والتدريبات
+CREATE POLICY "Workshops are public" ON public.workshops FOR SELECT USING (true);
+CREATE POLICY "Admins manage workshops" ON public.workshops FOR ALL USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
@@ -391,21 +444,53 @@ CREATE TRIGGER update_courses_updated_at BEFORE UPDATE ON public.courses FOR EAC
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON public.products FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_services_updated_at BEFORE UPDATE ON public.services FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON public.jobs FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_learning_paths_updated_at BEFORE UPDATE ON public.learning_paths FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_workshops_updated_at BEFORE UPDATE ON public.workshops FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 -- ==========================================
 -- 12. سياسات التخزين (STORAGE POLICIES)
 -- ==========================================
 
--- ملاحظة: يجب إنشاء باكت باسم 'uploads' في لوحة تحكم Supabase وجعلها Public
--- ثم تنفيذ هذه السياسات:
+-- إنشاء الباكتس المطلوبة إذا لم تكن موجودة
+INSERT INTO storage.buckets (id, name, public)
+VALUES 
+    ('uploads', 'uploads', true),
+    ('payment-proofs', 'payment-proofs', true),
+    ('certificates', 'certificates', true),
+    ('course-content', 'course-content', true)
+ON CONFLICT (id) DO NOTHING;
 
--- السماح للجميع بمشاهدة الملفات
--- CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'uploads');
+-- سياسات المشاهدة العامة للملفات
+DROP POLICY IF EXISTS "Public Select Uploads" ON storage.objects;
+CREATE POLICY "Public Select Uploads" ON storage.objects FOR SELECT USING (bucket_id = 'uploads');
 
--- السماح للمستخدمين المسجلين فقط برفع الملفات
--- CREATE POLICY "Authenticated Upload" ON storage.objects FOR INSERT WITH CHECK (
---     bucket_id = 'uploads' AND auth.role() = 'authenticated'
--- );
+DROP POLICY IF EXISTS "Public Select Payment Proofs" ON storage.objects;
+CREATE POLICY "Public Select Payment Proofs" ON storage.objects FOR SELECT USING (bucket_id = 'payment-proofs');
+
+DROP POLICY IF EXISTS "Public Select Certificates" ON storage.objects;
+CREATE POLICY "Public Select Certificates" ON storage.objects FOR SELECT USING (bucket_id = 'certificates');
+
+DROP POLICY IF EXISTS "Public Select Course Content" ON storage.objects;
+CREATE POLICY "Public Select Course Content" ON storage.objects FOR SELECT USING (bucket_id = 'course-content');
+
+-- سياسات الرفع للمستخدمين المسجلين
+DROP POLICY IF EXISTS "Authenticated Insert Uploads" ON storage.objects;
+CREATE POLICY "Authenticated Insert Uploads" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'uploads' AND auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated Insert Payment Proofs" ON storage.objects;
+CREATE POLICY "Authenticated Insert Payment Proofs" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'payment-proofs' AND auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated Insert Certificates" ON storage.objects;
+CREATE POLICY "Authenticated Insert Certificates" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'certificates' AND auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated Insert Course Content" ON storage.objects;
+CREATE POLICY "Authenticated Insert Course Content" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'course-content' AND auth.role() = 'authenticated');
+
+-- سياسة تحكم كاملة للمشرفين
+DROP POLICY IF EXISTS "Admins Manage Storage Objects" ON storage.objects;
+CREATE POLICY "Admins Manage Storage Objects" ON storage.objects FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
 
 -- ==========================================
 -- 13. وظائف المساعدة (HELPER FUNCTIONS)

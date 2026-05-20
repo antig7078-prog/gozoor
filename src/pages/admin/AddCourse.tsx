@@ -159,7 +159,7 @@ export const AddCourse = () => {
                 description: formData.description,
                 level: formData.level,
                 language: formData.language,
-                category: formData.category,
+                category: formData.category || null,
                 instructor_name: formData.instructorName,
                 is_free: formData.isFree,
                 price: formData.price,
