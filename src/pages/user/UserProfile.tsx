@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { userService } from '../../services/userService';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, Mail, Save, Camera, Trophy, BookOpen, Phone, MessageCircle, Globe, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { motion } from 'framer-motion';
+import { sanitizeInput, sanitizeUrl } from '../../utils/sanitize';
 
 export const UserProfile = () => {
     const { user } = useAuth();
@@ -27,13 +28,9 @@ export const UserProfile = () => {
         const fetchProfile = async () => {
             if (!user) return;
             try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('full_name, phone, whatsapp, bio, specialization, portfolio_url')
-                    .eq('id', user.id)
-                    .single();
+                const { data, error } = await userService.getProfile(user.id);
 
-                if (error) throw error;
+                if (error) throw new Error(error);
                 setFullName(data?.full_name || '');
                 setPhone(data?.phone || '');
                 setWhatsapp(data?.whatsapp || '');
@@ -56,19 +53,16 @@ export const UserProfile = () => {
 
         setSaving(true);
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ 
-                    full_name: fullName,
-                    phone: phone,
-                    whatsapp: whatsapp,
-                    bio: bio,
-                    specialization: specialization,
-                    portfolio_url: portfolioUrl
-                })
-                .eq('id', user.id);
+            const { error } = await userService.updateProfile(user.id, { 
+                full_name: sanitizeInput(fullName),
+                phone: sanitizeInput(phone),
+                whatsapp: sanitizeInput(whatsapp),
+                bio: sanitizeInput(bio),
+                specialization: sanitizeInput(specialization),
+                portfolio_url: sanitizeUrl(portfolioUrl)
+            });
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             toast.success('تم تحديث الملف الشخصي بنجاح');
         } catch (error: any) {
             toast.error('فشل التحديث: ' + error.message);

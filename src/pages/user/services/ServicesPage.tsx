@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MonitorPlay, Clock, Star, ChevronLeft, Plus, ArrowRight, Sparkles } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { PageHeader } from '../../../components/shared/PageHeader';
 import { SearchBar } from '../../../components/shared/SearchBar';
@@ -33,13 +33,10 @@ export const ServicesPage = () => {
     useEffect(() => {
         const fetchServices = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('services')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const { data, error } = await marketplaceService.getServices();
 
-                if (error) throw error;
-                if (data) setServices(data);
+                if (error) throw new Error(error);
+                if (data) setServices(data as any[]);
             } catch (error) {
                 console.error('Error fetching services:', error);
             } finally {

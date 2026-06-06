@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Package, Clock, CheckCircle2, XCircle, Truck, ShoppingBag, ChevronLeft, Calendar, Hash, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -34,16 +34,9 @@ export const MarketOrders = () => {
             if (!user) return;
             try {
                 // Fetch orders along with their order_items and product details
-                const { data, error } = await supabase
-                    .from('orders')
-                    .select(`
-                        id, total_amount, status, created_at,
-                        order_items ( id, quantity, price_at_purchase, product_id, products ( title, image_url ) )
-                    `)
-                    .eq('buyer_id', user.id)
-                    .order('created_at', { ascending: false });
+                const { data, error } = await marketplaceService.getMarketplaceOrders();
 
-                if (error) throw error;
+                if (error) throw new Error(error);
                 if (data) setOrders(data as any);
             } catch (error) {
                 console.error('Error fetching orders:', error);

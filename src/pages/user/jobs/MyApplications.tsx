@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
+import { jobsService } from '../../../services/jobsService';
 import { Briefcase, Clock, CheckCircle2, XCircle, FileText, ChevronLeft, MapPin, Sparkles, Zap, Search, Building2 } from 'lucide-react';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
@@ -31,16 +31,9 @@ export const MyApplications = () => {
         const fetchApplications = async () => {
             if (!user) return;
             try {
-                const { data, error } = await supabase
-                    .from('job_applications')
-                    .select(`
-                        id, status, created_at, job_id,
-                        jobs ( title, employer_id, job_type, location, company_name )
-                    `)
-                    .eq('applicant_id', user.id)
-                    .order('created_at', { ascending: false });
+                const { data, error } = await jobsService.getMyApplications(user.id);
 
-                if (error) throw error;
+                if (error) throw new Error(error);
                 if (data) setApplications(data as any);
             } catch (error) {
                 console.error('Error fetching applications:', error);

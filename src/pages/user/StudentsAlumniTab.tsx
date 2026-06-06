@@ -1,85 +1,66 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Map, Users, Sparkles } from 'lucide-react';
-import { Badge } from '../../components/ui/Badge';
-
-// Import sub-tab components
-import { UserCourses } from './UserCourses';
-import { LearningPathsPage } from './learning-paths/LearningPathsPage';
-import { WorkshopsPage } from './workshops/WorkshopsPage';
+import { motion } from 'framer-motion';
+import { BookOpen, Map, Users, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { PageContainer } from '../../components/shared/PageContainer';
+import { PageHeader } from '../../components/shared/PageHeader';
 
 export const StudentsAlumniTab = () => {
-    const [activeSubTab, setActiveSubTab] = useState('courses');
-
-    const subTabs = [
-        { id: 'courses', label: 'الكورسات', icon: BookOpen },
-        { id: 'paths', label: 'مسارات التعلم', icon: Map, badge: 'جديد' },
-        { id: 'workshops', label: 'تدريبات وورش العمل', icon: Users },
+    const categories = [
+        {
+            title: 'الكورسات',
+            description: 'تصفح مكتبة شاملة من الدورات المتخصصة في مختلف المجالات الزراعية.',
+            icon: BookOpen,
+            href: '/courses/browse',
+            color: 'text-brand-primary',
+            bg: 'bg-brand-primary/10'
+        },
+        {
+            title: 'مسارات التعلم',
+            description: 'مسارات متكاملة تأخذك من الصفر حتى الاحتراف.',
+            icon: Map,
+            href: '/learning-paths',
+            color: 'text-orange-500',
+            bg: 'bg-orange-50'
+        },
+        {
+            title: 'تدريبات وورش العمل',
+            description: 'حضور ورش عمل وتدريبات عملية لتطوير مهاراتك بشكل احترافي.',
+            icon: Users,
+            href: '/workshops',
+            color: 'text-blue-500',
+            bg: 'bg-blue-50'
+        }
     ];
 
-    const renderSubTabContent = () => {
-        switch (activeSubTab) {
-            case 'paths':
-                return <LearningPathsPage />;
-            case 'workshops':
-                return <WorkshopsPage />;
-            case 'courses':
-            default:
-                return (
-                    <div className="-mt-10">
-                        {/* We use UserCourses but might want to hide its header if possible.
-                            For now, let's assume it works well. */}
-                        <UserCourses />
-                    </div>
-                );
-        }
-    };
-
     return (
-        <div className="space-y-12">
-            {/* Sub-Tabs Navigation */}
-            <div className="flex items-center gap-2 p-1.5 bg-surface-primary border border-border-default rounded-3xl w-fit">
-                {subTabs.map((tab) => {
-                    const isActive = activeSubTab === tab.id;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveSubTab(tab.id)}
-                            className={`relative flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-xs sm:text-sm whitespace-nowrap transition-all duration-300 ${
-                                isActive ? 'text-white' : 'text-text-secondary hover:text-brand-primary'
-                            }`}
-                        >
-                            {isActive && (
-                                <motion.div
-                                    layoutId="activeSubTabPill"
-                                    className="absolute inset-0 bg-brand-primary shadow-md shadow-brand-primary/20"
-                                    style={{ borderRadius: '1rem' }}
-                                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                                />
-                            )}
-                            <tab.icon className={`w-4 h-4 relative z-10 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                            <span className="relative z-10">{tab.label}</span>
-                            {tab.badge && !isActive && (
-                                <span className="absolute -top-1 -left-1 bg-brand-primary text-white text-[8px] px-1.5 py-0.5 rounded-full animate-pulse">
-                                    {tab.badge}
-                                </span>
-                            )}
-                        </button>
-                    );
-                })}
-            </div>
+        <PageContainer maxWidth="xl">
+            <PageHeader 
+                title="التعليم والتدريب"
+                description="ابدأ رحلة التعلم الخاصة بك مع أفضل الكورسات والمسارات الزراعية المتخصصة."
+                icon={BookOpen}
+            />
 
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={activeSubTab}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    {renderSubTabContent()}
-                </motion.div>
-            </AnimatePresence>
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                {categories.map((cat, index) => (
+                    <Link to={cat.href} key={index}>
+                        <motion.div 
+                            whileHover={{ y: -5 }}
+                            className="bg-white p-8 rounded-[32px] border border-border-default shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col group"
+                        >
+                            <div className={`w-14 h-14 ${cat.bg} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                                <cat.icon className={`w-7 h-7 ${cat.color}`} />
+                            </div>
+                            <h3 className="text-xl font-black text-text-primary mb-3 group-hover:text-brand-primary transition-colors">{cat.title}</h3>
+                            <p className="text-text-secondary font-bold leading-relaxed mb-8 flex-1">{cat.description}</p>
+                            
+                            <div className="flex items-center gap-2 text-sm font-black text-brand-primary mt-auto">
+                                تصفح الآن
+                                <ArrowLeft className="w-4 h-4" />
+                            </div>
+                        </motion.div>
+                    </Link>
+                ))}
+            </div>
+        </PageContainer>
     );
 };

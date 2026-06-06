@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, Plus, Star, ChevronLeft, ArrowRight, ShoppingBag, Tag } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { PageHeader } from '../../../components/shared/PageHeader';
 import { SearchBar } from '../../../components/shared/SearchBar';
@@ -12,6 +12,7 @@ import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
 import { useAuth } from '../../../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 interface FreelanceProduct {
     id: string;
@@ -25,8 +26,6 @@ interface FreelanceProduct {
     seller_name?: string;
 }
 
-import { toast } from 'react-hot-toast';
-
 export const FreelanceProductsPage = () => {
     const { user } = useAuth();
     const requireAuth = useRequireAuth();
@@ -34,17 +33,12 @@ export const FreelanceProductsPage = () => {
     const [products, setProducts] = useState<FreelanceProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [showAddForm, setShowAddForm] = useState(false);
-    const [newProduct, setNewProduct] = useState({ title: '', description: '', price: '', category: 'كتب إلكترونية' });
 
     const fetchProducts = async () => {
         try {
-            const { data, error } = await supabase
-                .from('products')
-                .select('*, profiles:seller_id(full_name)')
-                .order('created_at', { ascending: false });
+            const { data, error } = await marketplaceService.getProducts();
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             if (data) {
                 setProducts(data.map((p: any) => ({
                     id: p.id,
@@ -55,7 +49,7 @@ export const FreelanceProductsPage = () => {
                     image_url: p.image_url,
                     category: p.category,
                     created_at: p.created_at,
-                    seller_name: p.profiles?.full_name || 'بائع',
+                    seller_name: p.seller?.full_name || 'بائع',
                 })));
             }
         } catch (error) {
@@ -68,32 +62,6 @@ export const FreelanceProductsPage = () => {
     useEffect(() => {
         fetchProducts();
     }, []);
-
-    const handleAddProduct = async () => {
-        if (!requireAuth('سجّل دخولك الأول عشان تقدر تضيف منتج 📦')) return;
-        if (!newProduct.title.trim() || !newProduct.description.trim() || !newProduct.price) return;
-
-        try {
-            const { error } = await supabase.from('products').insert([{
-                seller_id: user?.id,
-                title: newProduct.title.trim(),
-                description: newProduct.description.trim(),
-                price: parseFloat(newProduct.price),
-                category: newProduct.category,
-                status: 'Published'
-            }]);
-
-            if (error) throw error;
-
-            fetchProducts();
-            setShowAddForm(false);
-            setNewProduct({ title: '', description: '', price: '', category: 'كتب إلكترونية' });
-            toast.success('تم إضافة المنتج بنجاح! 🎉');
-        } catch (error) {
-            console.error('Error adding freelance product:', error);
-            toast.error('حدث خطأ أثناء الإضافة');
-        }
-    };
 
     const filteredProducts = products.filter(p =>
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

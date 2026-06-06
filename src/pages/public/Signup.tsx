@@ -16,7 +16,7 @@ export const Signup = () => {
     const { session, role: currentRole } = useAuth();
 
     useEffect(() => {
-        if (session) {
+        if (session && currentRole !== null) {
             navigate(currentRole === 'admin' ? '/admin' : '/dashboard');
         }
     }, [session, currentRole, navigate]);

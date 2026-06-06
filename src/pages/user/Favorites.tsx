@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { courseService } from '../../services/courseService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Heart, ArrowRight, PlayCircle } from 'lucide-react';
@@ -16,16 +16,10 @@ export const Favorites = () => {
         if (!user) return;
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('favorites')
-                .select(`
-                    course_id,
-                    courses (*)
-                `)
-                .eq('user_id', user.id);
+            const { data, error } = await courseService.getFavorites();
 
-            if (error) throw error;
-            setFavoriteCourses(data?.map(f => f.courses) || []);
+            if (error) throw new Error(error);
+            setFavoriteCourses(data || []);
         } catch (error) {
             console.error('Error fetching favorites:', error);
         } finally {
@@ -38,11 +32,7 @@ export const Favorites = () => {
     }, [user]);
 
     const removeFromFavorites = async (courseId: string) => {
-        const { error } = await supabase
-            .from('favorites')
-            .delete()
-            .eq('user_id', user?.id)
-            .eq('course_id', courseId);
+        const { error } = await courseService.toggleFavorite(courseId, true);
 
         if (!error) {
             setFavoriteCourses(prev => prev.filter(c => c.id !== courseId));

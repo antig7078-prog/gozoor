@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { useState, useEffect } from 'react';
+import { workshopService } from '../../../services/workshopService';
 import { motion } from 'framer-motion';
 import { PlayCircle, Calendar, Users, MapPin, Sparkles, ChevronLeft } from 'lucide-react';
 import { Card } from '../../../components/shared/Card';
@@ -14,13 +14,10 @@ export const WorkshopsPage = () => {
     useEffect(() => {
         const fetchWorkshops = async () => {
             try {
-                // Fetch workshops - assuming we have a workshops table or similar
-                const { data, error } = await supabase
-                    .from('workshops')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const { data, error } = await workshopService.getWorkshops();
 
-                if (!error) setWorkshops(data || []);
+                if (error) throw new Error(error);
+                setWorkshops(data || []);
             } catch (error) {
                 console.error('Error fetching workshops:', error);
             } finally {

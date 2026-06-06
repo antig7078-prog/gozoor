@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { marketplaceService } from '../../services/marketplaceService';
 import { MonitorPlay, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { PageContainer } from '../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../components/shared/PageHeader';
+import { ConfirmModal } from '../../components/shared/ConfirmModal';
 
 interface Service {
     id: string;
@@ -17,6 +18,11 @@ interface Service {
 export const ManageServices = () => {
     const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; serviceId: string | null; isLoading: boolean }>({
+        isOpen: false,
+        serviceId: null,
+        isLoading: false
+    });
 
     useEffect(() => {
         fetchServices();
@@ -24,33 +30,36 @@ export const ManageServices = () => {
 
     const fetchServices = async () => {
         try {
-            const { data, error } = await supabase
-                .from('services')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const { data, error } = await marketplaceService.getServices();
 
-            if (error) throw error;
-            if (data) setServices(data);
-        } catch (error) {
+            if (error) throw new Error(error);
+            if (data) setServices(data as any[]);
+        } catch (error: any) {
             console.error('Error fetching services:', error);
-            toast.error('حدث خطأ أثناء جلب الخدمات');
+            toast.error(error.message || 'حدث خطأ أثناء جلب الخدمات');
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('هل أنت متأكد من حذف هذه الخدمة؟')) return;
+        setDeleteModal({ isOpen: true, serviceId: id, isLoading: false });
+    };
 
+    const confirmDelete = async () => {
+        if (!deleteModal.serviceId) return;
+        setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('services').delete().eq('id', id);
-            if (error) throw error;
+            const { error } = await marketplaceService.deleteService(deleteModal.serviceId);
+            if (error) throw new Error(error);
 
             toast.success('تم حذف الخدمة بنجاح');
-            setServices(services.filter(s => s.id !== id));
-        } catch (error) {
+            setServices(services.filter(s => s.id !== deleteModal.serviceId));
+            setDeleteModal({ isOpen: false, serviceId: null, isLoading: false });
+        } catch (error: any) {
             console.error('Error deleting service:', error);
-            toast.error('حدث خطأ أثناء الحذف');
+            toast.error(error.message || 'حدث خطأ أثناء الحذف');
+            setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }
     };
 
@@ -121,10 +130,17 @@ export const ManageServices = () => {
                     </table>
                 </div>
             </div>
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, serviceId: null, isLoading: false })}
+                onConfirm={confirmDelete}
+                isLoading={deleteModal.isLoading}
+                title="حذف الخدمة"
+                message="هل أنت متأكد من حذف هذه الخدمة؟ لا يمكن التراجع عن هذا الإجراء."
+                confirmText="حذف الآن"
+                cancelText="تراجع"
+                type="danger"
+            />
         </PageContainer>
     );
 };
-
-
-
-

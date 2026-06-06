@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { jobsService } from '../../services/jobsService';
 import { Briefcase, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { PageContainer } from '../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../components/shared/PageHeader';
+import { ConfirmModal } from '../../components/shared/ConfirmModal';
 
 interface Job {
     id: string;
@@ -17,6 +18,11 @@ interface Job {
 export const ManageJobs = () => {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; jobId: string | null; isLoading: boolean }>({
+        isOpen: false,
+        jobId: null,
+        isLoading: false
+    });
 
     useEffect(() => {
         fetchJobs();
@@ -24,33 +30,36 @@ export const ManageJobs = () => {
 
     const fetchJobs = async () => {
         try {
-            const { data, error } = await supabase
-                .from('jobs')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const { data, error } = await jobsService.getJobs();
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             if (data) setJobs(data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching jobs:', error);
-            toast.error('حدث خطأ أثناء جلب الوظائف');
+            toast.error(error.message || 'حدث خطأ أثناء جلب الوظائف');
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('هل أنت متأكد من حذف هذه الوظيفة؟')) return;
+        setDeleteModal({ isOpen: true, jobId: id, isLoading: false });
+    };
 
+    const confirmDelete = async () => {
+        if (!deleteModal.jobId) return;
+        setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('jobs').delete().eq('id', id);
-            if (error) throw error;
+            const { error } = await jobsService.deleteJob(deleteModal.jobId);
+            if (error) throw new Error(error);
 
             toast.success('تم حذف الوظيفة بنجاح');
-            setJobs(jobs.filter(j => j.id !== id));
-        } catch (error) {
+            setJobs(jobs.filter(j => j.id !== deleteModal.jobId));
+            setDeleteModal({ isOpen: false, jobId: null, isLoading: false });
+        } catch (error: any) {
             console.error('Error deleting job:', error);
-            toast.error('حدث خطأ أثناء الحذف');
+            toast.error(error.message || 'حدث خطأ أثناء الحذف');
+            setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }
     };
 
@@ -127,10 +136,17 @@ export const ManageJobs = () => {
                     </table>
                 </div>
             </div>
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, jobId: null, isLoading: false })}
+                onConfirm={confirmDelete}
+                isLoading={deleteModal.isLoading}
+                title="حذف الوظيفة"
+                message="هل أنت متأكد من حذف هذه الوظيفة؟ لا يمكن التراجع عن هذا الإجراء."
+                confirmText="حذف الآن"
+                cancelText="تراجع"
+                type="danger"
+            />
         </PageContainer>
     );
 };
-
-
-
-

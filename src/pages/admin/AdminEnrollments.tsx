@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase, getSignedUrl } from '../../lib/supabase';
+import { enrollmentService } from '../../services/enrollmentService';
 import { 
     CheckCircle2, 
     XCircle, 
@@ -28,16 +29,9 @@ export const AdminEnrollments = () => {
     const fetchEnrollments = async () => {
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('enrollments')
-                .select(`
-                    *,
-                    profiles:user_id (full_name, email),
-                    courses:course_id (title)
-                `)
-                .order('enrolled_at', { ascending: false });
+            const { data, error } = await enrollmentService.getEnrollments();
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             setEnrollments(data || []);
         } catch (error: any) {
             toast.error('حدث خطأ أثناء جلب الطلبات');
@@ -97,12 +91,9 @@ export const AdminEnrollments = () => {
 
     const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
         try {
-            const { error } = await supabase
-                .from('enrollments')
-                .update({ status })
-                .eq('id', id);
+            const { error } = await enrollmentService.updateEnrollmentStatus(id, status);
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             
             toast.success(status === 'approved' ? 'تم الموافقة على الطلب بنجاح' : 'تم رفض الطلب');
             setEnrollments(prev => prev.map(e => e.id === id ? { ...e, status } : e));
@@ -219,7 +210,10 @@ export const AdminEnrollments = () => {
                                         <td className="px-6 py-5 text-center">
                                             {e.proof_image_url ? (
                                                 <button
-                                                    onClick={() => setSelectedImage(e.proof_image_url)}
+                                                    onClick={async () => {
+                                                        const signedUrl = await getSignedUrl('payment-proofs', e.proof_image_url);
+                                                        setSelectedImage(signedUrl);
+                                                    }}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-primary/10 text-brand-primary rounded-[var(--radius-button)] hover:bg-brand-primary hover:text-white transition-all text-xs font-black"
                                                     aria-label="عرض إيصال الدفع"
                                                 >

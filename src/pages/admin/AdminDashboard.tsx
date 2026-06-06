@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { userService } from '../../services/userService';
+import { courseService } from '../../services/courseService';
 import { Users, Activity, BookOpen, GraduationCap, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -15,16 +16,13 @@ export const AdminDashboard = () => {
             setIsLoading(true);
 
             // Fetch total courses count
-            const { count: cCount } = await supabase.from('courses').select('*', { count: 'exact', head: true });
+            const { count: cCount } = await courseService.getCourseCount();
 
             // Fetch total students (role = user)
-            const { count: uCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'user');
-
-            // Fetch total enrollments
-            await supabase.from('enrollments').select('*', { count: 'exact', head: true });
+            const { count: uCount } = await userService.getUserCount('user');
 
             // Fetch free materials count
-            const { count: fCount } = await supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_free', true);
+            const { count: fCount } = await courseService.getCourseCount(true);
 
             setStatsData({
                 courses: cCount || 0,

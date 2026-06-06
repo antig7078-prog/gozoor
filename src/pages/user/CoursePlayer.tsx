@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { getSignedUrl } from '../../lib/supabase';
+import { userService } from '../../services/userService';
+import { enrollmentService } from '../../services/enrollmentService';
+import { courseService } from '../../services/courseService';
 import {
     PlayCircle,
     BookOpen,
@@ -39,26 +42,16 @@ export const CoursePlayer = () => {
             try {
                 // 1. Check Enrollment
                 if (user) {
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', user.id)
-                        .single();
+                    const { data: profile } = await userService.getProfile(user.id);
+                    const { enrolled, status } = await enrollmentService.checkEnrollment(id!);
 
-                    const { data: enrollData } = await supabase
-                        .from('enrollments')
-                        .select('status')
-                        .eq('user_id', user.id)
-                        .eq('course_id', id)
-                        .single();
-
-                    if (enrollData?.status === 'approved' || profile?.role === 'admin') setIsEnrolled(true);
+                    if (status === 'approved' || profile?.role === 'admin') setIsEnrolled(true);
                 }
 
                 // 2. Fetch Course & Content
                 const [courseRes, sectionsRes] = await Promise.all([
-                    supabase.from('courses').select('*').eq('id', id).single(),
-                    supabase.from('course_sections').select('*, course_lectures(*)').eq('course_id', id).order('sort_order', { ascending: true })
+                    courseService.getCourseById(id!),
+                    courseService.getCourseSectionsWithLectures(id!)
                 ]);
 
                 if (courseRes.error) throw courseRes.error;
@@ -90,25 +83,23 @@ export const CoursePlayer = () => {
 
                 // 4. Fetch Progress
                 if (user) {
-                    const { data: progressData } = await supabase
-                        .from('user_progress')
-                        .select('lecture_id')
-                        .eq('user_id', user.id)
-                        .eq('course_id', id);
+                    const { data: progressData } = await enrollmentService.getCourseProgress(id!);
 
                     if (progressData) {
                         setCompletedLectures(progressData.map(p => p.lecture_id));
                     }
 
                     // Check if cert already requested and get status/url
-                    const { data: certData } = await supabase
-                        .from('certificate_requests')
-                        .select('status, certificate_url')
-                        .eq('user_id', user.id)
-                        .eq('course_id', id)
-                        .single();
+                    const { data: certData } = await enrollmentService.getCertificateRequestForCourse(id!);
 
-                    if (certData) setHasRequestedCert(certData);
+                    if (certData) {
+                        if (certData.status === 'approved' && certData.certificate_url) {
+                            const signedUrl = await getSignedUrl('certificates', certData.certificate_url);
+                            setHasRequestedCert({ ...certData, certificate_url: signedUrl });
+                        } else {
+                            setHasRequestedCert(certData);
+                        }
+                    }
                 }
 
             } catch (error: any) {
@@ -151,25 +142,12 @@ export const CoursePlayer = () => {
         const isCompleted = completedLectures.includes(lectureId);
         
         try {
+            const { success, error } = await enrollmentService.toggleLectureProgress(id!, lectureId, isCompleted);
+            if (error) throw new Error(error);
+
             if (isCompleted) {
-                const { error } = await supabase
-                    .from('user_progress')
-                    .delete()
-                    .eq('user_id', user.id)
-                    .eq('lecture_id', lectureId);
-                
-                if (error) throw error;
                 setCompletedLectures(prev => prev.filter(id => id !== lectureId));
             } else {
-                const { error } = await supabase
-                    .from('user_progress')
-                    .insert([{ 
-                        user_id: user.id, 
-                        course_id: id, 
-                        lecture_id: lectureId 
-                    }]);
-                
-                if (error) throw error;
                 setCompletedLectures(prev => [...prev, lectureId]);
                 toast.success('أحسنت! تم إكمال الدرس');
             }
@@ -184,19 +162,11 @@ export const CoursePlayer = () => {
         setIsRequestingCert(true);
 
         try {
-            const { error } = await supabase.from('certificate_requests').insert([
-                { user_id: user.id, course_id: id }
-            ]);
-
-            if (error) throw error;
+            const { error } = await enrollmentService.requestCertificate(id!);
+            if (error) throw new Error(error);
             
             // Re-fetch to get the status correctly
-            const { data: newCert } = await supabase
-                .from('certificate_requests')
-                .select('status, certificate_url')
-                .eq('user_id', user.id)
-                .eq('course_id', id)
-                .single();
+            const { data: newCert } = await enrollmentService.getCertificateRequestForCourse(id!);
             
             setHasRequestedCert(newCert || { status: 'pending' });
             toast.success('تم إرسال طلب الشهادة بنجاح! سيقوم الإدمن بمراجعته قريباً');

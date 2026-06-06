@@ -3,25 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, MapPin, DollarSign, Clock, Send, FileText, CheckCircle2, ChevronRight, Building2, Sparkles, Zap, ChevronLeft, Calendar } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import { supabase } from '../../../lib/supabase';
+import { SkillTags } from '../../../components/jobs/SkillTags';
+import { jobsService } from '../../../services/jobsService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
 import { toast } from 'react-hot-toast';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
-
-interface Job {
-    id: string;
-    employer_id: string;
-    title: string;
-    description: string;
-    requirements: string;
-    salary_range: string;
-    location: string;
-    job_type: string;
-    created_at: string;
-    company_name?: string;
-}
+import type { Job } from '../../../types';
 
 export const JobDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -43,25 +32,16 @@ export const JobDetailsPage = () => {
         const fetchJobAndApplicationStatus = async () => {
             if (!id) return;
             try {
-                const { data: jobData, error: jobError } = await supabase
-                    .from('jobs')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
+                const { data: jobData, error: jobError } = await jobsService.getJobById(id);
 
-                if (jobError) throw jobError;
+                if (jobError) throw new Error(jobError);
                 setJob(jobData);
 
                 if (user) {
-                    const { data: appData, error: appError } = await supabase
-                        .from('job_applications')
-                        .select('id')
-                        .eq('job_id', id)
-                        .eq('applicant_id', user.id)
-                        .maybeSingle();
+                    const { hasApplied: appliedStatus, error: appError } = await jobsService.checkHasApplied(id, user.id);
 
-                    if (appError) throw appError;
-                    if (appData) setHasApplied(true);
+                    if (appError) throw new Error(appError);
+                    if (appliedStatus) setHasApplied(true);
                 }
 
             } catch (error) {
@@ -80,19 +60,20 @@ export const JobDetailsPage = () => {
 
         setIsSubmitting(true);
         try {
-            const { error } = await supabase.from('job_applications').insert([{
-                job_id: id,
-                applicant_id: user?.id,
-                resume_url: applyForm.resume_url,
-                cover_letter: applyForm.cover_letter
-            }]);
+            if (!id || !user?.id) throw new Error('Missing job or user details');
+            const { error } = await jobsService.applyToJob(
+                id,
+                user.id,
+                applyForm.resume_url,
+                applyForm.cover_letter
+            );
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             toast.success('تم تقديم طلب التوظيف بنجاح!');
             setHasApplied(true);
             setShowApplyForm(false);
         } catch (error: any) {
-            toast.error('حدث خطأ أثناء التقديم');
+            toast.error(error.message || 'حدث خطأ أثناء التقديم');
             console.error(error);
         } finally {
             setIsSubmitting(false);
@@ -127,6 +108,8 @@ export const JobDetailsPage = () => {
             </PageContainer>
         );
     }
+
+    const isOwner = user?.id === job.employer_id;
 
     return (
         <PageContainer maxWidth="md">
@@ -176,7 +159,7 @@ export const JobDetailsPage = () => {
                                     </div>
                                     <div>
                                         <div className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-0.5 sm:mb-1">الشركة المُعلنة</div>
-                                        <div className="text-text-primary font-black text-lg sm:text-xl">{job.company_name || 'شركة زراعية رائدة'}</div>
+                                        <Link to={`/profile/${job.employer_id}`} className="text-text-primary font-black text-lg sm:text-xl hover:text-brand-primary transition-colors">{job.company_name || 'شركة زراعية رائدة'}</Link>
                                     </div>
                                 </div>
                             </div>
@@ -200,11 +183,19 @@ export const JobDetailsPage = () => {
                                     <div className="w-1.5 h-8 sm:w-2 sm:h-10 bg-brand-primary rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
                                     <h3 className="text-xl sm:text-2xl font-black text-text-primary">المتطلبات والمهارات المطلوبة</h3>
                                 </div>
-                                <div className="text-text-secondary text-base sm:text-lg leading-relaxed whitespace-pre-wrap bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border-2 border-dashed border-border-subtle font-bold relative group">
+                                <div className="text-text-secondary text-base sm:text-lg leading-relaxed whitespace-pre-wrap bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-border-subtle font-bold relative group">
                                     <div className="absolute top-6 left-6 opacity-5 group-hover:opacity-10 transition-opacity">
                                         <Sparkles className="w-12 h-12 sm:w-16 sm:h-16 text-brand-primary" />
                                     </div>
                                     {job.requirements || 'لم يتم تحديد متطلبات خاصة لهذه الوظيفة.'}
+                                    
+                                    {/* Render skills tags below the text if they exist */}
+                                    {job.skills && (
+                                        <div className="mt-6 pt-6 border-t border-slate-100">
+                                            <div className="text-xs text-text-muted font-black uppercase tracking-wider mb-3">المهارات المستهدفة:</div>
+                                            <SkillTags skills={job.skills} />
+                                        </div>
+                                    )}
                                 </div>
                             </section>
                         </div>
@@ -212,7 +203,7 @@ export const JobDetailsPage = () => {
 
                     {/* Apply Form Section */}
                     <AnimatePresence>
-                        {showApplyForm && !hasApplied && (
+                        {showApplyForm && !hasApplied && !isOwner && (
                             <motion.div 
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -300,10 +291,22 @@ export const JobDetailsPage = () => {
                                         <MapPin className="w-6 h-6 text-brand-primary" />
                                     </div>
                                     <div>
-                                        <div className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-1">الموقع</div>
+                                        <div className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-1">الموقع / العنوان</div>
                                         <div className="text-text-primary font-black">{job.location || 'غير محدد'}</div>
                                     </div>
                                 </div>
+
+                                {job.governorate && (
+                                    <div className="flex items-start gap-5 group">
+                                        <div className="w-12 h-12 rounded-2xl bg-surface-primary flex items-center justify-center shrink-0 group-hover:bg-brand-primary/10 transition-colors shadow-inner">
+                                            <MapPin className="w-6 h-6 text-brand-primary" />
+                                        </div>
+                                        <div>
+                                            <div className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-1">المحافظة</div>
+                                            <div className="text-text-primary font-black">{job.governorate}</div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="flex items-start gap-5 group">
                                     <div className="w-12 h-12 rounded-2xl bg-surface-primary flex items-center justify-center shrink-0 group-hover:bg-brand-primary/10 transition-colors shadow-inner">
@@ -324,11 +327,33 @@ export const JobDetailsPage = () => {
                                         <div className="text-text-primary font-black">{job.job_type}</div>
                                     </div>
                                 </div>
+
+                                {job.deadline && (
+                                    <div className="flex items-start gap-5 group">
+                                        <div className="w-12 h-12 rounded-2xl bg-surface-primary flex items-center justify-center shrink-0 group-hover:bg-brand-primary/10 transition-colors shadow-inner">
+                                            <Calendar className="w-6 h-6 text-brand-primary" />
+                                        </div>
+                                        <div>
+                                            <div className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-1">آخر موعد للتقديم</div>
+                                            <div className="text-text-primary font-black">
+                                                {new Date(job.deadline).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         <div className="pt-10 border-t border-slate-50">
-                            {hasApplied ? (
+                            {isOwner ? (
+                                <Link
+                                    to={`/jobs/${job.id}/applicants`}
+                                    className="w-full flex items-center justify-center gap-3 py-5 bg-brand-primary text-white font-black rounded-3xl shadow-xl shadow-brand-primary/20 hover:bg-brand-bg hover:scale-[1.02] active:scale-95 transition-all text-center"
+                                >
+                                    عرض المتقدمين للوظيفة
+                                    <ChevronLeft className="w-5 h-5" />
+                                </Link>
+                            ) : hasApplied ? (
                                 <div className="w-full flex items-center justify-center gap-3 py-5 bg-surface-primary text-brand-primary font-black rounded-3xl border border-brand-primary/20">
                                     <CheckCircle2 className="w-6 h-6" />
                                     تم تقديم طلبك بنجاح
@@ -372,6 +397,7 @@ export const JobDetailsPage = () => {
         </PageContainer>
     );
 };
+
 
 
 

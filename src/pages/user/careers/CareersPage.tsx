@@ -1,103 +1,66 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, MonitorPlay, Package, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Briefcase, MonitorPlay, Package, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { PageHeader } from '../../../components/shared/PageHeader';
 
-// Import existing pages as sub-components
-import { JobsListingPage } from '../jobs/JobsListingPage';
-import { ServicesPage } from '../services/ServicesPage';
-import { FreelanceProductsPage } from './FreelanceProductsPage';
-
-
-type MainTab = 'jobs' | 'freelance';
-type FreelanceSubTab = 'services' | 'products';
-
 export const CareersPage = () => {
-    const [mainTab, setMainTab] = useState<MainTab>('jobs');
-    const [freelanceSubTab, setFreelanceSubTab] = useState<FreelanceSubTab>('services');
-
-    const mainTabs = [
-        { id: 'jobs' as MainTab, label: 'الوظائف', icon: Briefcase, desc: 'فرص عمل في كبرى المؤسسات الزراعية' },
-        { id: 'freelance' as MainTab, label: 'العمل الحر', icon: MonitorPlay, desc: 'خدمات ومنتجات المستقلين' },
-    ];
-
-    const freelanceTabs = [
-        { id: 'services' as FreelanceSubTab, label: 'الخدمات', icon: MonitorPlay },
-        { id: 'products' as FreelanceSubTab, label: 'منتجاتي', icon: Package },
+    const categories = [
+        {
+            title: 'الوظائف',
+            description: 'تصفح أحدث فرص العمل في كبرى المؤسسات الزراعية وقدم عليها بسهولة.',
+            icon: Briefcase,
+            href: '/jobs',
+            color: 'text-blue-500',
+            bg: 'bg-blue-50'
+        },
+        {
+            title: 'الخدمات (العمل الحر)',
+            description: 'اكتشف خدمات المستقلين أو اعرض خدماتك للعملاء.',
+            icon: MonitorPlay,
+            href: '/services',
+            color: 'text-brand-primary',
+            bg: 'bg-brand-primary/10'
+        },
+        {
+            title: 'المنتجات الرقمية',
+            description: 'سوق المنتجات الزراعية والرقمية المتنوعة.',
+            icon: Package,
+            href: '/marketplace',
+            color: 'text-purple-500',
+            bg: 'bg-purple-50'
+        }
     ];
 
     return (
-        <div>
-            {/* Main Tabs Header */}
-            <div className="bg-white border-b border-border-subtle sticky top-0 z-30">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="flex items-center gap-2 sm:gap-4 py-3 sm:py-4 overflow-x-auto hide-scrollbar">
-                        {mainTabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setMainTab(tab.id)}
-                                className={`relative flex items-center gap-2 sm:gap-3 px-5 sm:px-8 py-3 sm:py-4 rounded-2xl font-black text-sm sm:text-base transition-all duration-300 whitespace-nowrap ${mainTab === tab.id
-                                        ? 'bg-brand-primary text-white shadow-xl shadow-brand-primary/20'
-                                        : 'bg-surface-primary text-text-secondary hover:bg-brand-primary/5 hover:text-brand-primary'
-                                    }`}
-                            >
-                                <tab.icon className="w-5 h-5" />
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
+        <PageContainer maxWidth="xl">
+            <PageHeader 
+                title="الوظائف والعمل الحر"
+                description="وجهتك الأولى للبحث عن عمل، عرض خدماتك، أو بيع منتجاتك في المجال الزراعي."
+                icon={Briefcase}
+            />
 
-            {/* Freelance Sub-Tabs */}
-            <AnimatePresence mode="wait">
-                {mainTab === 'freelance' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="bg-white/80 backdrop-blur-md border-b border-border-subtle"
-                    >
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                            <div className="flex items-center gap-2 py-3 overflow-x-auto hide-scrollbar">
-                                {freelanceTabs.map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setFreelanceSubTab(tab.id)}
-                                        className={`flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all duration-300 whitespace-nowrap ${freelanceSubTab === tab.id
-                                                ? 'bg-brand-bg text-white shadow-lg'
-                                                : 'bg-surface-primary text-text-muted hover:text-text-primary hover:bg-slate-100'
-                                            }`}
-                                    >
-                                        <tab.icon className="w-4 h-4" />
-                                        {tab.label}
-                                    </button>
-                                ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                {categories.map((cat, index) => (
+                    <Link to={cat.href} key={index}>
+                        <motion.div 
+                            whileHover={{ y: -5 }}
+                            className="bg-white p-8 rounded-[32px] border border-border-default shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col group"
+                        >
+                            <div className={`w-14 h-14 ${cat.bg} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                                <cat.icon className={`w-7 h-7 ${cat.color}`} />
                             </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Tab Content */}
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={mainTab === 'freelance' ? `freelance-${freelanceSubTab}` : mainTab}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    {mainTab === 'jobs' && <JobsContent />}
-                    {mainTab === 'freelance' && freelanceSubTab === 'services' && <ServicesContent />}
-                    {mainTab === 'freelance' && freelanceSubTab === 'products' && <FreelanceProductsPage />}
-                </motion.div>
-            </AnimatePresence>
-        </div>
+                            <h3 className="text-xl font-black text-text-primary mb-3 group-hover:text-brand-primary transition-colors">{cat.title}</h3>
+                            <p className="text-text-secondary font-bold leading-relaxed mb-8 flex-1">{cat.description}</p>
+                            
+                            <div className="flex items-center gap-2 text-sm font-black text-brand-primary mt-auto">
+                                تصفح الآن
+                                <ArrowLeft className="w-4 h-4" />
+                            </div>
+                        </motion.div>
+                    </Link>
+                ))}
+            </div>
+        </PageContainer>
     );
 };
-
-// Wrapper to render jobs content inline (without its own PageContainer wrapper colliding)
-const JobsContent = () => <JobsListingPage />;
-const ServicesContent = () => <ServicesPage />;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../../lib/supabase';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { MonitorPlay, Plus, Trash2, Calendar, Clock, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -33,16 +33,12 @@ export const UserServices = () => {
         const fetchServices = async () => {
             if (!user) return;
             try {
-                const { data, error } = await supabase
-                    .from('services')
-                    .select('*')
-                    .eq('freelancer_id', user.id)
-                    .order('created_at', { ascending: false });
+                const { data, error } = await marketplaceService.getServices({ freelancerId: user.id });
 
-                if (error) throw error;
-                if (data) setServices(data);
-            } catch (error) {
-                console.error('Error fetching services:', error);
+                if (error) throw new Error(error);
+                if (data) setServices(data as any[]);
+            } catch (error: any) {
+                console.error('Error fetching services:', error.message);
             } finally {
                 setLoading(false);
             }
@@ -59,13 +55,13 @@ export const UserServices = () => {
         if (!deleteModal.serviceId) return;
         setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('services').delete().eq('id', deleteModal.serviceId);
-            if (error) throw error;
+            const { error } = await marketplaceService.deleteService(deleteModal.serviceId);
+            if (error) throw new Error(error);
             toast.success('تم حذف الخدمة بنجاح');
             setServices(services.filter(s => s.id !== deleteModal.serviceId));
             setDeleteModal({ isOpen: false, serviceId: null, isLoading: false });
         } catch (error: any) {
-            toast.error('حدث خطأ أثناء الحذف');
+            toast.error(error.message || 'حدث خطأ أثناء الحذف');
             console.error(error);
             setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }

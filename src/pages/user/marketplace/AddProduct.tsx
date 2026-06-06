@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../../../lib/supabase';
+import { userService } from '../../../services/userService';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Store, ArrowRight, Info, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
@@ -10,6 +11,7 @@ import { PageContainer } from '../../../components/shared/PageContainer';
 import { PageHeader } from '../../../components/shared/PageHeader';
 import { ImageUpload } from '../../../components/shared/ImageUpload';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { sanitizeInput, sanitizeUrl } from '../../../utils/sanitize';
 
 export const AddProduct = () => {
     const navigate = useNavigate();
@@ -21,15 +23,11 @@ export const AddProduct = () => {
         const checkProfile = async () => {
             if (!user) return;
             try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('full_name, phone, whatsapp')
-                    .eq('id', user.id)
-                    .single();
+                const { data, error } = await userService.getProfile(user.id);
 
-                if (error) throw error;
+                if (error) throw new Error(error);
 
-                if (!data.full_name || !data.phone || !data.whatsapp) {
+                if (data && (!data.full_name || !data.phone || !data.whatsapp)) {
                     toast.error('برجاء إكمال بياناتك (الاسم، رقم الهاتف، والواتساب) في ملفك الشخصي أولاً قبل إضافة منتجات.', {
                         duration: 5000,
                         icon: '⚠️'
@@ -61,21 +59,21 @@ export const AddProduct = () => {
 
         setIsSubmitting(true);
         try {
-            const { error } = await supabase.from('products').insert([{
-                seller_id: user.id,
-                title: formData.title,
-                description: formData.description,
+            const { error } = await marketplaceService.createProduct({
+                title: sanitizeInput(formData.title),
+                description: sanitizeInput(formData.description),
                 price: parseFloat(formData.price),
                 stock: parseInt(formData.stock, 10),
-                category: formData.category,
-                image_url: formData.image_url
-            }]);
+                category: sanitizeInput(formData.category),
+                image_url: sanitizeUrl(formData.image_url),
+                seller_id: user.id
+            });
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             toast.success('تم إضافة المنتج بنجاح!');
             navigate('/user-products');
         } catch (error: any) {
-            toast.error('حدث خطأ أثناء إضافة المنتج');
+            toast.error(error.message || 'حدث خطأ أثناء إضافة المنتج');
             console.error(error);
         } finally {
             setIsSubmitting(false);

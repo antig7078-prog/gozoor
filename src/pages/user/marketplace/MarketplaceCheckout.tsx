@@ -16,7 +16,7 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCartStore } from '../../../lib/store/cartStore';
-import { supabase } from '../../../lib/supabase';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -56,6 +56,8 @@ export const MarketplaceCheckout = () => {
     }
 
     const handleConfirmPayment = async () => {
+        if (isProcessing) return;
+
         if (!user) {
             toast.error('يرجى تسجيل الدخول أولاً');
             navigate('/login');
@@ -69,41 +71,22 @@ export const MarketplaceCheckout = () => {
 
         setIsProcessing(true);
         try {
-            // 1. Create Order
-            const { data: orderData, error: orderError } = await supabase
-                .from('orders')
-                .insert([{
-                    buyer_id: user.id,
-                    total_amount: totalPrice,
-                    shipping_address: shippingAddress,
-                    contact_number: contactNumber,
-                    status: 'Pending'
-                }])
-                .select()
-                .single();
+            // Create Order using marketplaceService
+            const { error } = await marketplaceService.createMarketplaceOrder(
+                totalPrice,
+                shippingAddress,
+                contactNumber,
+                items
+            );
 
-            if (orderError) throw orderError;
-
-            // 2. Create Order Items
-            const orderItemsInsert = items.map(item => ({
-                order_id: orderData.id,
-                product_id: item.id,
-                quantity: item.quantity,
-                price_at_purchase: item.price
-            }));
-
-            const { error: itemsError } = await supabase
-                .from('order_items')
-                .insert(orderItemsInsert);
-
-            if (itemsError) throw itemsError;
+            if (error) throw new Error(error);
 
             // 3. Clear cart and show success
             clearCart();
             setIsSuccess(true);
             toast.success('تم استلام طلبك بنجاح!');
         } catch (error: any) {
-            toast.error('حدث خطأ أثناء معالجة الطلب');
+            toast.error(error.message || 'حدث خطأ أثناء معالجة الطلب');
             console.error(error);
         } finally {
             setIsProcessing(false);

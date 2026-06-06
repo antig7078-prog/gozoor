@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { userService } from '../../services/userService';
+import { enrollmentService } from '../../services/enrollmentService';
+import { courseService } from '../../services/courseService';
 import { Link } from 'react-router-dom';
 import {
     BookOpen, Award, Clock, PlayCircle, Sparkles, TrendingUp,
@@ -35,54 +37,20 @@ export const UserDashboard = () => {
             try {
                 if (user) {
                     // Fetch profile
-                    const { data: profileData } = await supabase
-                        .from('profiles')
-                        .select('full_name')
-                        .eq('id', user.id)
-                        .single();
-
+                    const { data: profileData } = await userService.getProfile(user.id);
                     if (profileData) {
                         setProfileName(profileData.full_name);
                     }
 
-                    const { data: enrollmentsData, error: enrollmentsError } = await supabase
-                        .from('enrollments')
-                        .select('*, courses(*, course_sections(course_lectures(id)))')
-                        .eq('user_id', user.id);
-
-                    if (!enrollmentsError && enrollmentsData) {
-                        const { data: progressData } = await supabase
-                            .from('user_progress')
-                            .select('course_id, lecture_id')
-                            .eq('user_id', user.id);
-
-                        const userCourses = enrollmentsData.map(e => e.courses).filter(Boolean);
-                        const uniqueCourses = Array.from(new Map(userCourses.map((item: any) => [item.id, item])).values());
-
-                        const coursesWithProgress = uniqueCourses.map((course: any) => {
-                            let totalLectures = 0;
-                            if (course.course_sections) {
-                                course.course_sections.forEach((sec: any) => {
-                                    totalLectures += sec.course_lectures?.length || 0;
-                                });
-                            }
-                            const completedCount = progressData?.filter(p => p.course_id === course.id).length || 0;
-                            const progress = totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
-                            return { ...course, progress };
-                        });
-
+                    // Fetch enrolled courses with progress
+                    const { data: coursesWithProgress, error: enrollmentsError } = await enrollmentService.getUserEnrolledCoursesWithProgress();
+                    if (!enrollmentsError && coursesWithProgress) {
                         setEnrolledCourses(coursesWithProgress);
                     }
                 }
 
-                const { data: coursesData, error: coursesError } = await supabase
-                    .from('courses')
-                    .select('*')
-                    .eq('status', 'Published')
-                    .eq('visibility', 'Public')
-                    .order('created_at', { ascending: false })
-                    .limit(3);
-
+                // Fetch suggested courses
+                const { data: coursesData, error: coursesError } = await courseService.getSuggestedCourses(3);
                 if (coursesError) throw coursesError;
                 setSuggestedCourses(coursesData || []);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { userService } from '../../services/userService';
 import { Users, Mail, CheckCircle, Trash2, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmModal } from '../../components/shared/ConfirmModal';
@@ -36,7 +36,7 @@ export const AdminUsers = () => {
     const fetchUsers = async () => {
         setIsLoading(true);
         try {
-            const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+            const { data, error } = await userService.getUsersList();
             if (error) {
                 console.log("Profiles table might not exist yet.");
                 setUsers([]);
@@ -64,13 +64,13 @@ export const AdminUsers = () => {
             onConfirm: async () => {
                 setIsActionLoading(true);
                 try {
-                    const { error } = await supabase.from('profiles').delete().eq('id', user.id);
-                    if (error) throw error;
+                    const { error } = await userService.deleteUser(user.id);
+                    if (error) throw new Error(error);
                     toast.success('تم حذف المستخدم بنجاح');
                     setUsers(prev => prev.filter(u => u.id !== user.id));
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                } catch (error) {
-                    toast.error('فشل في حذف المستخدم');
+                } catch (error: any) {
+                    toast.error(error.message || 'فشل في حذف المستخدم');
                 } finally {
                     setIsActionLoading(false);
                 }
@@ -89,13 +89,13 @@ export const AdminUsers = () => {
             onConfirm: async () => {
                 setIsActionLoading(true);
                 try {
-                    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', user.id);
-                    if (error) throw error;
+                    const { error } = await userService.updateUserRole(user.id, newRole);
+                    if (error) throw new Error(error);
                     toast.success('تم تغيير الرتبة بنجاح');
                     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole as any } : u));
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                } catch (error) {
-                    toast.error('فشل تغيير الصلاحيات');
+                } catch (error: any) {
+                    toast.error(error.message || 'فشل تغيير الصلاحيات');
                 } finally {
                     setIsActionLoading(false);
                 }

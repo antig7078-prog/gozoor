@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { courseService } from '../../services/courseService';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
     PlusCircle, Map, Save, Send, Trash2, ListChecks, 
@@ -37,22 +37,18 @@ export const AddLearningPath = () => {
 
     useEffect(() => {
         const fetchCourses = async () => {
-            const { data } = await supabase
-                .from('courses')
-                .select('*')
-                .eq('status', 'Published')
-                .order('title');
-            if (data) setCourses(data);
+            const { data } = await courseService.getPublishedCourses();
+            if (data) {
+                // Sort by title for easier search/selection
+                const sorted = [...data].sort((a, b) => a.title.localeCompare(b.title));
+                setCourses(sorted);
+            }
         };
         fetchCourses();
 
         if (isEditing) {
             const fetchPath = async () => {
-                const { data: path, error } = await supabase
-                    .from('learning_paths')
-                    .select('*, learning_path_courses(course_id, sort_order, courses(*))')
-                    .eq('id', id)
-                    .single();
+                const { data: path, error } = await courseService.getLearningPathById(id);
                 
                 if (error) {
                     toast.error('حدث خطأ في تحميل بيانات المسار.');
@@ -99,39 +95,8 @@ export const AddLearningPath = () => {
                 thumbnail_url: formData.thumbnailUrl,
             };
 
-            let currentPathId = id;
-
-            if (isEditing) {
-                const { error } = await supabase
-                    .from('learning_paths')
-                    .update(pathPayload)
-                    .eq('id', id);
-                if (error) throw error;
-            } else {
-                const { data, error } = await supabase
-                    .from('learning_paths')
-                    .insert([pathPayload])
-                    .select()
-                    .single();
-                if (error) throw error;
-                currentPathId = data.id;
-            }
-
-            // Sync courses
-            if (currentPathId) {
-                // Delete existing mappings
-                await supabase.from('learning_path_courses').delete().eq('learning_path_id', currentPathId);
-                
-                // Insert new mappings
-                const mappings = selectedCourses.map((course, index) => ({
-                    learning_path_id: currentPathId,
-                    course_id: course.id,
-                    sort_order: index
-                }));
-
-                const { error: syncError } = await supabase.from('learning_path_courses').insert(mappings);
-                if (syncError) throw syncError;
-            }
+            const { error } = await courseService.saveLearningPath(id, pathPayload, selectedCourses);
+            if (error) throw new Error(error);
 
             toast.success(status === 'Published' ? 'تم نشر المسار بنجاح!' : 'تم حفظ المسودة بنجاح!');
             navigate('/admin/learning-paths');

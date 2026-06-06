@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase, getSignedUrl } from '../../lib/supabase';
 import {
     Trophy,
     X,
@@ -280,7 +280,10 @@ export const AdminCertificates = () => {
                                                             variant="secondary"
                                                             size="sm"
                                                             icon={ExternalLink}
-                                                            onClick={() => window.open(req.certificate_url, '_blank')}
+                                                            onClick={async () => {
+                                                                const signedUrl = await getSignedUrl('certificates', req.certificate_url);
+                                                                window.open(signedUrl, '_blank');
+                                                            }}
                                                         >
                                                             عرض الشهادة
                                                         </Button>

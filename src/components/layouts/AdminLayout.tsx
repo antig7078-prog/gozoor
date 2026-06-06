@@ -17,7 +17,8 @@ import {
     Leaf,
     Trophy,
     MessageCircle,
-    Map
+    Map,
+    ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -81,6 +82,7 @@ export const AdminLayout = () => {
         { name: 'الدورات التعليمية', href: '/admin/courses', icon: BookOpen },
         { name: 'التصنيفات', href: '/admin/categories', icon: Tag },
         { name: 'المنتجات', href: '/admin/products', icon: Store },
+        { name: 'الطلبات', href: '/admin/orders', icon: ShoppingBag },
         { name: 'مسارات التعلم', href: '/admin/learning-paths', icon: Map },
         { name: 'الوظائف', href: '/admin/jobs', icon: Briefcase },
         { name: 'الخدمات', href: '/admin/services', icon: MonitorPlay },
@@ -188,7 +190,7 @@ export const AdminLayout = () => {
             </aside>
 
             {/* Main Content Area */}
-            <main className={`flex-1 w-full min-h-screen transition-all duration-300 ${isDesktopSidebarOpen ? 'lg:pr-64 sm:lg:pr-72' : 'lg:pr-0'}`}>
+            <main className={`flex-1 w-full min-h-screen transition-all duration-300 ${isDesktopSidebarOpen ? 'lg:pr-72' : 'lg:pr-0'}`}>
                 <div className="p-4 sm:p-6 md:p-10 pt-20 lg:pt-10 max-w-[1600px] mx-auto">
                     <Outlet />
                 </div>

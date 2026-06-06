@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { marketplaceService } from '../../services/marketplaceService';
 import { Store, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { PageContainer } from '../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../components/shared/PageHeader';
+import { ConfirmModal } from '../../components/shared/ConfirmModal';
 
 interface Product {
     id: string;
@@ -17,6 +18,11 @@ interface Product {
 export const ManageProducts = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; productId: string | null; isLoading: boolean }>({
+        isOpen: false,
+        productId: null,
+        isLoading: false
+    });
 
     useEffect(() => {
         fetchProducts();
@@ -24,33 +30,36 @@ export const ManageProducts = () => {
 
     const fetchProducts = async () => {
         try {
-            const { data, error } = await supabase
-                .from('products')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const { data, error } = await marketplaceService.getProducts();
 
-            if (error) throw error;
-            if (data) setProducts(data);
-        } catch (error) {
+            if (error) throw new Error(error);
+            if (data) setProducts(data as any[]);
+        } catch (error: any) {
             console.error('Error fetching products:', error);
-            toast.error('حدث خطأ أثناء جلب المنتجات');
+            toast.error(error.message || 'حدث خطأ أثناء جلب المنتجات');
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+        setDeleteModal({ isOpen: true, productId: id, isLoading: false });
+    };
 
+    const confirmDelete = async () => {
+        if (!deleteModal.productId) return;
+        setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('products').delete().eq('id', id);
-            if (error) throw error;
+            const { error } = await marketplaceService.deleteProduct(deleteModal.productId);
+            if (error) throw new Error(error);
 
             toast.success('تم حذف المنتج بنجاح');
-            setProducts(products.filter(p => p.id !== id));
-        } catch (error) {
+            setProducts(products.filter(p => p.id !== deleteModal.productId));
+            setDeleteModal({ isOpen: false, productId: null, isLoading: false });
+        } catch (error: any) {
             console.error('Error deleting product:', error);
-            toast.error('حدث خطأ أثناء الحذف');
+            toast.error(error.message || 'حدث خطأ أثناء الحذف');
+            setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }
     };
 
@@ -121,10 +130,17 @@ export const ManageProducts = () => {
                     </table>
                 </div>
             </div>
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, productId: null, isLoading: false })}
+                onConfirm={confirmDelete}
+                isLoading={deleteModal.isLoading}
+                title="حذف المنتج"
+                message="هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء."
+                confirmText="حذف الآن"
+                cancelText="تراجع"
+                type="danger"
+            />
         </PageContainer>
     );
 };
-
-
-
-

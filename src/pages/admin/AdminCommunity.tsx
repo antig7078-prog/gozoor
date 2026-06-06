@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { communityService } from '../../services/communityService';
 import { 
     Users, MessageCircle, Heart, Trash2, 
     AlertTriangle, CheckCircle, XCircle, Eye
@@ -48,10 +48,7 @@ export const AdminCommunity = () => {
     });
 
     const fetchPosts = async () => {
-        const { data, error } = await supabase
-            .from('posts')
-            .select('*, profiles:user_id(full_name)')
-            .order('created_at', { ascending: false });
+        const { data, error } = await communityService.getPosts();
 
         if (!error && data) {
             setPosts(data.map((p: any) => ({
@@ -62,14 +59,7 @@ export const AdminCommunity = () => {
     };
 
     const fetchReports = async () => {
-        const { data, error } = await supabase
-            .from('post_reports')
-            .select(`
-                *,
-                posts:post_id(content, profiles:user_id(full_name)),
-                profiles:reporter_id(full_name)
-            `)
-            .order('created_at', { ascending: false });
+        const { data, error } = await communityService.getReports();
 
         if (!error && data) {
             setReports(data.map((r: any) => ({
@@ -99,36 +89,33 @@ export const AdminCommunity = () => {
         if (!deleteModal.postId) return;
         setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('posts').delete().eq('id', deleteModal.postId);
-            if (error) throw error;
+            const { error } = await communityService.deletePost(deleteModal.postId);
+            if (error) throw new Error(error);
             
             // If deleting from a report, we should also resolve the report
             const relatedReports = reports.filter(r => r.post_id === deleteModal.postId);
             for (const r of relatedReports) {
-                await supabase.from('post_reports').update({ status: 'resolved' }).eq('id', r.id);
+                await communityService.updateReportStatus(r.id, 'resolved');
             }
 
             toast.success('تم حذف المنشور بنجاح');
             loadData();
             setDeleteModal({ isOpen: false, postId: null, isLoading: false });
-        } catch (error) {
-            toast.error('حدث خطأ أثناء الحذف');
+        } catch (error: any) {
+            toast.error(error.message || 'حدث خطأ أثناء الحذف');
             setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }
     };
 
     const handleActionOnReport = async (reportId: string, action: 'resolved' | 'dismissed') => {
         try {
-            const { error } = await supabase
-                .from('post_reports')
-                .update({ status: action })
-                .eq('id', reportId);
+            const { error } = await communityService.updateReportStatus(reportId, action);
             
-            if (error) throw error;
+            if (error) throw new Error(error);
             toast.success(action === 'resolved' ? 'تم حل البلاغ' : 'تم تجاهل البلاغ');
             fetchReports();
-        } catch (error) {
-            toast.error('فشل تحديث حالة البلاغ');
+        } catch (error: any) {
+            toast.error(error.message || 'فشل تحديث حالة البلاغ');
         }
     };
 

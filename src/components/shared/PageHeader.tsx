@@ -35,7 +35,7 @@ export const PageHeader = ({
               {badge}
             </div>
           )}
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-1 sm:mb-2 truncate">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 leading-normal tracking-tight mb-1 sm:mb-2 py-1">
             {title}
           </h1>
           {description && (

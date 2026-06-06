@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Leaf, LogIn, LayoutDashboard, ShoppingCart, Menu, X, Home, Compass, ShoppingBag, Briefcase, Users } from 'lucide-react';
+import { Leaf, LogIn, LayoutDashboard, ShoppingCart, Menu, X, Home, Compass, ShoppingBag, Briefcase, Users, MonitorPlay } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../lib/store/cartStore';
@@ -24,6 +24,8 @@ export const PublicBrowseLayout = () => {
     const navLinks = [
         { name: 'الرئيسية', href: '/', icon: Home },
         { name: 'الدورات', href: '/courses', icon: Compass },
+        { name: 'الخدمات', href: '/services', icon: MonitorPlay },
+        { name: 'الوظائف', href: '/jobs', icon: Briefcase },
         { name: 'المتجر', href: '/marketplace', icon: ShoppingBag },
         { name: 'المجتمع الزراعي', href: '/community', icon: Users },
         { name: 'الوظائف والعمل الحر', href: '/careers', icon: Briefcase },
@@ -67,20 +69,18 @@ export const PublicBrowseLayout = () => {
 
                         {/* Right Actions */}
                         <div className="flex items-center gap-3">
-                            {/* Cart (only for logged in users) */}
-                            {user && (
-                                <Link
-                                    to="/cart"
-                                    className="relative p-2.5 text-text-secondary hover:text-brand-primary hover:bg-surface-primary rounded-xl transition-all"
-                                >
-                                    <ShoppingCart className="w-5 h-5" />
-                                    {totalItems > 0 && (
-                                        <span className="absolute -top-0.5 -left-0.5 bg-brand-primary text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
-                                            {totalItems}
-                                        </span>
-                                    )}
-                                </Link>
-                            )}
+                            {/* Cart (visible to all users, guest and auth) */}
+                            <Link
+                                to="/cart"
+                                className="relative p-2.5 text-text-secondary hover:text-brand-primary hover:bg-surface-primary rounded-xl transition-all"
+                            >
+                                <ShoppingCart className="w-5 h-5" />
+                                {totalItems > 0 && (
+                                    <span className="absolute -top-0.5 -left-0.5 bg-brand-primary text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                                        {totalItems}
+                                    </span>
+                                )}
+                            </Link>
 
                             {user ? (
                                 <Link

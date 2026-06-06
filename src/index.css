@@ -230,11 +230,3 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
-
-/* Glassmorphism Responsive Adjustment */
-@media (max-width: 640px) {
-  .glass-card {
-    backdrop-blur: 10px;
-    padding: 1.5rem;
-  }
-}

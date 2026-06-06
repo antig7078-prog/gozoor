@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { courseService } from '../../services/courseService';
 import { CreditCard, DollarSign, CheckCircle, Clock, XCircle, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageContainer } from '../../components/shared/PageContainer';
@@ -20,10 +20,7 @@ export const AdminOrders = () => {
     const fetchOrders = async () => {
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('orders')
-                .select('*, profiles(full_name, email), courses(title)')
-                .order('created_at', { ascending: false });
+            const { data, error } = await courseService.getCourseOrders();
             
             if (error) {
                 toast.error("فشل تحميل الطلبات");
@@ -44,8 +41,8 @@ export const AdminOrders = () => {
 
     const handleUpdateStatus = async (orderId: string, newStatus: string) => {
         try {
-            const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-            if (error) throw error;
+            const { error } = await courseService.updateCourseOrderStatus(orderId, newStatus);
+            if (error) throw new Error(error);
             toast.success('تم تحديث حالة الطلب');
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         } catch (error: any) {

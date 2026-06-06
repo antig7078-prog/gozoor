@@ -27,22 +27,86 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let active = true;
+
+        const checkUser = async (currentSession: Session | null) => {
+            if (!currentSession) {
+                if (active) {
+                    setSession(null);
+                    setUser(null);
+                    setRole(null);
+                    setLoading(false);
+                }
+                return;
+            }
+
+            if (active) {
+                setSession(currentSession);
+                setUser(currentSession.user);
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', currentSession.user.id)
+                    .single();
+
+                if (active) {
+                    if (error) {
+                        if (error.code === 'PGRST116') {
+                            // User has an auth session but no profile row (user deleted or corrupted state)
+                            await supabase.auth.signOut();
+                            // Clean up remaining localStorage tokens
+                            Object.keys(localStorage).forEach(key => {
+                                if (key.startsWith('sb-') || key.includes('supabase.auth.token')) {
+                                    localStorage.removeItem(key);
+                                }
+                            });
+                            setSession(null);
+                            setUser(null);
+                            setRole(null);
+                            setLoading(false);
+                            return;
+                        }
+                        setRole('user');
+                    } else if (data) {
+                        setRole(data.role as 'user' | 'admin');
+                    } else {
+                        setRole('user');
+                    }
+                }
+            } catch (err) {
+                if (active) {
+                    setRole('user');
+                }
+            } finally {
+                if (active) {
+                    setLoading(false);
+                }
+            }
+        };
+
         supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            // Default to 'user' if role metadata is not found
-            setRole(session?.user?.user_metadata?.role ?? (session ? 'user' : null));
-            setLoading(false);
+            checkUser(session);
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setRole(session?.user?.user_metadata?.role ?? (session ? 'user' : null));
-            setLoading(false);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                // Clear localStorage related to supabase token or session if it gets corrupted
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('sb-') || key.includes('supabase.auth.token')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+            }
+            checkUser(session);
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            active = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const signOut = async () => {

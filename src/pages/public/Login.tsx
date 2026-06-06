@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Leaf, ArrowLeft } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -12,13 +12,18 @@ export const Login = () => {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
     const { session, role } = useAuth();
 
+    const from = role === 'admin'
+        ? ((location.state as any)?.from?.startsWith('/admin') ? (location.state as any).from : '/admin')
+        : ((location.state as any)?.from || '/dashboard');
+
     useEffect(() => {
-        if (session) {
-            navigate(role === 'admin' ? '/admin' : '/dashboard');
+        if (session && role !== null) {
+            navigate(from, { replace: true });
         }
-    }, [session, role, navigate]);
+    }, [session, role, navigate, from]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

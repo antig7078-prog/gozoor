@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { useState, useEffect } from 'react';
+import { courseService } from '../../../services/courseService';
 import { motion } from 'framer-motion';
 import { Sparkles, Map, ChevronLeft, BookOpen, Clock, Award } from 'lucide-react';
 import { PageContainer } from '../../../components/shared/PageContainer';
@@ -17,12 +17,9 @@ export const LearningPathsPage = () => {
         const fetchPaths = async () => {
             try {
                 // Fetch learning paths with their courses
-                const { data, error } = await supabase
-                    .from('learning_paths')
-                    .select('*, learning_path_courses(course_id, courses(*))')
-                    .order('created_at', { ascending: false });
+                const { data, error } = await courseService.getLearningPaths();
 
-                if (error) throw error;
+                if (error) throw new Error(error);
                 setPaths(data || []);
             } catch (error) {
                 console.error('Error fetching learning paths:', error);

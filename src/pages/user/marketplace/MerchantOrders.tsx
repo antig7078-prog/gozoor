@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Package, Clock, CheckCircle2, XCircle, Truck, ShoppingBag, Hash, Calendar, Tag, User, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -40,61 +40,10 @@ export const MerchantOrders = () => {
     const fetchMerchantOrders = async () => {
         if (!user) return;
         try {
-            // First, find all products belonging to this seller
-            const { data: myProducts } = await supabase
-                .from('products')
-                .select('id')
-                .eq('seller_id', user.id);
-
-            if (!myProducts || myProducts.length === 0) {
-                setOrders([]);
-                return;
-            }
-
-            const productIds = myProducts.map(p => p.id);
-
-            // Fetch order items for these products
-            const { data: orderItems, error: itemsError } = await supabase
-                .from('order_items')
-                .select(`
-                    id, 
-                    order_id, 
-                    quantity, 
-                    price_at_purchase, 
-                    product_id,
-                    products ( title, image_url )
-                `)
-                .in('product_id', productIds);
-
-            if (itemsError) throw itemsError;
-
-            if (orderItems && orderItems.length > 0) {
-                const orderIds = Array.from(new Set(orderItems.map(item => item.order_id)));
-
-                // Fetch the actual orders and buyer info
-                const { data: ordersData, error: ordersError } = await supabase
-                    .from('orders')
-                    .select(`
-                        id, 
-                        created_at, 
-                        status, 
-                        total_amount,
-                        buyer:profiles!orders_buyer_id_fkey ( full_name, phone, whatsapp )
-                    `)
-                    .in('id', orderIds)
-                    .order('created_at', { ascending: false });
-
-                if (ordersError) throw ordersError;
-
-                // Group items by order
-                const formattedOrders = ordersData.map((order: any) => ({
-                    ...order,
-                    items: orderItems.filter(item => item.order_id === order.id)
-                }));
-
-                setOrders(formattedOrders);
-            }
-        } catch (error) {
+            const { data, error } = await marketplaceService.getMerchantOrders();
+            if (error) throw new Error(error);
+            setOrders(data || []);
+        } catch (error: any) {
             console.error('Error fetching merchant orders:', error);
             toast.error('حدث خطأ أثناء تحميل الطلبات');
         } finally {
@@ -108,15 +57,12 @@ export const MerchantOrders = () => {
 
     const updateOrderStatus = async (orderId: string, newStatus: string) => {
         try {
-            const { error } = await supabase
-                .from('orders')
-                .update({ status: newStatus })
-                .eq('id', orderId);
+            const { error } = await marketplaceService.updateOrderStatus(orderId, newStatus);
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             toast.success('تم تحديث حالة الطلب بنجاح');
             fetchMerchantOrders();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating order status:', error);
             toast.error('فشل تحديث حالة الطلب');
         }

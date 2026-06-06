@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { courseService } from '../../services/courseService';
 import { 
     Plus, Search, Map, MoreVertical, Edit, 
     Trash2, Eye, LayoutGrid, List, BookOpen,
@@ -24,10 +24,7 @@ export const AdminLearningPaths = () => {
 
     const fetchPaths = async () => {
         setIsLoading(true);
-        const { data, error } = await supabase
-            .from('learning_paths')
-            .select('*, learning_path_courses(count)')
-            .order('created_at', { ascending: false });
+        const { data, error } = await courseService.getLearningPathsWithCourseCount();
 
         if (error) {
             toast.error('حدث خطأ في جلب مسارات التعلم');
@@ -45,12 +42,9 @@ export const AdminLearningPaths = () => {
         if (!confirm('هل أنت متأكد من حذف هذا المسار؟')) return;
 
         try {
-            const { error } = await supabase
-                .from('learning_paths')
-                .delete()
-                .eq('id', id);
+            const { error } = await courseService.deleteLearningPath(id);
 
-            if (error) throw error;
+            if (error) throw new Error(error);
             toast.success('تم حذف المسار بنجاح');
             fetchPaths();
         } catch (error: any) {

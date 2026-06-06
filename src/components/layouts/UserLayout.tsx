@@ -16,21 +16,51 @@ import {
     ShoppingCart,
     Leaf,
     Users,
-    Package
+    Package,
+    Map,
+    Calendar,
+    Heart,
+    MessageSquare,
+    Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../lib/store/cartStore';
+import { messagingService } from '../../services/messagingService';
+import { notificationService } from '../../services/notificationService';
 
 export const UserLayout = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
-    const { signOut } = useAuth();
+    const { user, signOut } = useAuth();
     const { totalItems } = useCartStore();
     const location = useLocation();
     const navigate = useNavigate();
 
+    const [unreadMessages, setUnreadMessages] = useState(0);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
+
     const sidebarRef = useRef<HTMLElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+    const fetchCounts = async () => {
+        if (!user) return;
+        try {
+            const { count: msgCount } = await messagingService.getUnreadCount();
+            setUnreadMessages(msgCount || 0);
+
+            const { data: notifData } = await notificationService.getNotifications();
+            if (notifData) {
+                const notifCount = notifData.filter(n => !n.is_read).length;
+                setUnreadNotifications(notifCount);
+            }
+        } catch {}
+    };
+
+    useEffect(() => {
+        fetchCounts();
+        const interval = setInterval(fetchCounts, 15000);
+        return () => clearInterval(interval);
+    }, [user]);
 
     // Focus restoration when menu closes
     useEffect(() => {
@@ -77,20 +107,57 @@ export const UserLayout = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isMenuOpen]);
 
-    const navigation = [
-        { name: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'المجتمع الزراعي', href: '/community', icon: Users },
-        { name: 'الوظائف والعمل الحر', href: '/careers', icon: Briefcase },
-        { name: 'استكشاف الدورات', href: '/courses', icon: Compass },
-        { name: 'دوراتي التعليمية', href: '/my-courses', icon: BookOpen },
-        { name: 'المتجر', href: '/marketplace', icon: ShoppingBag },
-        { name: 'السلة', href: '/cart', icon: ShoppingCart, badge: totalItems > 0 ? totalItems : null },
-        { name: 'طلباتي', href: '/market-orders', icon: Package },
-        { name: 'طلبات العملاء', href: '/customer-orders', icon: Users },
-        { name: 'إدارة خدماتي', href: '/user-services', icon: MonitorPlay },
-        { name: 'إدارة منتجاتي', href: '/user-products', icon: Package },
-        { name: 'طلبات التوظيف', href: '/my-applications', icon: FileText },
-        { name: 'الملف الشخصي', href: '/profile', icon: Settings },
+    const navigationGroups = [
+        {
+            title: 'العامة',
+            items: [
+                { name: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
+                { name: 'الرسائل', href: '/messages', icon: MessageSquare, badge: unreadMessages > 0 ? unreadMessages : null },
+                { name: 'الإشعارات', href: '/notifications', icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : null },
+            ]
+        },
+        {
+            title: 'التعلم والتطوير',
+            items: [
+                { name: 'مسارات التعلم', href: '/learning-paths', icon: Map },
+                { name: 'استكشاف الدورات', href: '/courses', icon: Compass },
+                { name: 'دوراتي التعليمية', href: '/my-courses', icon: BookOpen },
+                { name: 'ورش العمل والتدريبات', href: '/workshops', icon: Calendar },
+                { name: 'المفضلة', href: '/favorites', icon: Heart },
+            ]
+        },
+        {
+            title: 'السوق والمتجر',
+            items: [
+                { name: 'المتجر', href: '/marketplace', icon: ShoppingBag },
+                { name: 'السلة', href: '/cart', icon: ShoppingCart, badge: totalItems > 0 ? totalItems : null },
+                { name: 'طلباتي', href: '/market-orders', icon: Package },
+            ]
+        },
+        {
+            title: 'البيع والخدمات',
+            items: [
+                { name: 'إدارة منتجاتي', href: '/user-products', icon: Package },
+                { name: 'طلبات العملاء', href: '/customer-orders', icon: Users },
+                { name: 'إدارة خدماتي', href: '/user-services', icon: MonitorPlay },
+                { name: 'طلبات الخدمات', href: '/service-orders', icon: FileText },
+            ]
+        },
+        {
+            title: 'الوظائف والتوظيف',
+            items: [
+                { name: 'الوظائف والعمل الحر', href: '/careers', icon: Briefcase },
+                { name: 'وظائفي المعروضة', href: '/my-jobs', icon: Briefcase },
+                { name: 'طلبات التوظيف', href: '/my-applications', icon: FileText },
+            ]
+        },
+        {
+            title: 'التفاعل والحساب',
+            items: [
+                { name: 'المجتمع الزراعي', href: '/community', icon: Users },
+                { name: 'الملف الشخصي', href: '/profile', icon: Settings },
+            ]
+        }
     ];
 
     const handleSignOut = async () => {
@@ -156,33 +223,40 @@ export const UserLayout = () => {
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto py-8 px-4 custom-scrollbar">
-                    <nav className="space-y-2">
-                        {navigation.map((item) => {
-                            const isActive = location.pathname === item.href || (location.pathname.startsWith('/courses/') && item.href === '/courses');
-                            return (
-                                <Link
-                                    key={item.name}
-                                    to={item.href}
-                                    onClick={() => setIsMenuOpen(false)}
-                                    className={`flex items-center justify-between px-5 py-3.5 rounded-button font-bold transition-all duration-200 group ${isActive
-                                        ? 'bg-brand-primary/20 text-white shadow-inner'
-                                        : 'text-brand-primary-light/60 hover:bg-brand-primary/10 hover:text-white'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-primary' : 'text-brand-primary/50 group-hover:text-brand-primary'}`} />
-                                        <span className="text-sm">{item.name}</span>
-                                    </div>
-                                    {item.badge && (
-                                        <span className="bg-brand-primary text-white text-xs px-2 py-0.5 rounded-full">
-                                            {item.badge}
-                                        </span>
-                                    )}
-                                </Link>
-                            );
-                        })}
-                    </nav>
+                <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar space-y-6">
+                    {navigationGroups.map((group) => (
+                        <div key={group.title} className="space-y-2">
+                            <h2 className="px-4 text-[10px] font-black text-brand-primary-light/40 uppercase tracking-widest">
+                                {group.title}
+                            </h2>
+                            <nav className="space-y-1">
+                                {group.items.map((item) => {
+                                    const isActive = location.pathname === item.href || (location.pathname.startsWith('/courses/') && item.href === '/courses');
+                                    return (
+                                        <Link
+                                            key={item.name}
+                                            to={item.href}
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className={`flex items-center justify-between px-4 py-2.5 rounded-button font-bold transition-all duration-200 group ${isActive
+                                                ? 'bg-brand-primary/20 text-white shadow-inner'
+                                                : 'text-brand-primary-light/60 hover:bg-brand-primary/10 hover:text-white'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <item.icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-primary' : 'text-brand-primary/50 group-hover:text-brand-primary'}`} />
+                                                <span className="text-xs">{item.name}</span>
+                                            </div>
+                                            {item.badge && (
+                                                <span className="bg-brand-primary text-white text-[10px] px-1.5 py-0.5 rounded-full font-black min-w-[18px] text-center">
+                                                    {item.badge}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
+                        </div>
+                    ))}
                 </div>
 
                 <div className="p-6 border-t border-brand-primary/10 bg-brand-bg">
@@ -197,7 +271,7 @@ export const UserLayout = () => {
             </aside>
 
             {/* Main Content Area */}
-            <main className={`flex-1 w-full min-h-screen transition-all duration-300 ${isDesktopSidebarOpen ? 'lg:pr-64 sm:lg:pr-72' : 'lg:pr-0'}`}>
+            <main className={`flex-1 w-full min-h-screen transition-all duration-300 ${isDesktopSidebarOpen ? 'lg:pr-72' : 'lg:pr-0'}`}>
                 <div className="p-4 sm:p-6 md:p-10 pt-20 lg:pt-10 max-w-[1600px] mx-auto">
                     <Outlet />
                 </div>

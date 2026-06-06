@@ -3,7 +3,7 @@ import { Store, Plus, Trash2, ShoppingBag, Hash, Calendar, ChevronLeft, AlertCir
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import { supabase } from '../../../lib/supabase';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
@@ -34,16 +34,12 @@ export const UserProducts = () => {
         const fetchProducts = async () => {
             if (!user) return;
             try {
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*')
-                    .eq('seller_id', user.id)
-                    .order('created_at', { ascending: false });
+                const { data, error } = await marketplaceService.getProducts({ sellerId: user.id });
 
-                if (error) throw error;
-                if (data) setProducts(data);
-            } catch (error) {
-                console.error('Error fetching products:', error);
+                if (error) throw new Error(error);
+                if (data) setProducts(data as any[]);
+            } catch (error: any) {
+                console.error('Error fetching products:', error.message);
             } finally {
                 setLoading(false);
             }
@@ -60,13 +56,13 @@ export const UserProducts = () => {
         if (!deleteModal.productId) return;
         setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('products').delete().eq('id', deleteModal.productId);
-            if (error) throw error;
+            const { error } = await marketplaceService.deleteProduct(deleteModal.productId);
+            if (error) throw new Error(error);
             toast.success('تم حذف المنتج بنجاح');
             setProducts(products.filter(p => p.id !== deleteModal.productId));
             setDeleteModal({ isOpen: false, productId: null, isLoading: false });
         } catch (error: any) {
-            toast.error('حدث خطأ أثناء الحذف');
+            toast.error(error.message || 'حدث خطأ أثناء الحذف');
             console.error(error);
             setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }

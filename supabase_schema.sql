@@ -13,32 +13,57 @@ END;
 $$ language 'plpgsql';
 
 -- وظائف تحديث عدادات الإعجابات والتعليقات
-CREATE OR REPLACE FUNCTION increment_likes(post_id_val UUID)
+CREATE OR REPLACE FUNCTION public.increment_likes(post_id_val UUID)
 RETURNS void AS $$
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.post_likes WHERE post_id = post_id_val AND user_id = auth.uid()) THEN
+        RAISE EXCEPTION 'Like not registered';
+    END IF;
     UPDATE public.posts
-    SET likes_count = likes_count + 1
+    SET likes_count = (SELECT COUNT(*) FROM public.post_likes WHERE post_id = post_id_val)
     WHERE id = post_id_val;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION decrement_likes(post_id_val UUID)
+CREATE OR REPLACE FUNCTION public.decrement_likes(post_id_val UUID)
 RETURNS void AS $$
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
     UPDATE public.posts
-    SET likes_count = GREATEST(0, likes_count - 1)
+    SET likes_count = (SELECT COUNT(*) FROM public.post_likes WHERE post_id = post_id_val)
     WHERE id = post_id_val;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION increment_comments(post_id_val UUID)
+CREATE OR REPLACE FUNCTION public.increment_comments(post_id_val UUID)
 RETURNS void AS $$
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
     UPDATE public.posts
-    SET comments_count = comments_count + 1
+    SET comments_count = (SELECT COUNT(*) FROM public.post_comments WHERE post_id = post_id_val)
     WHERE id = post_id_val;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.decrement_comments(post_id_val UUID)
+RETURNS void AS $$
+BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+    UPDATE public.posts
+    SET comments_count = (SELECT COUNT(*) FROM public.post_comments WHERE post_id = post_id_val)
+    WHERE id = post_id_val;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
 -- ==========================================
 -- 2. نظام المستخدمين والبروفايلات (USER SYSTEM)
@@ -51,7 +76,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     phone TEXT,
     whatsapp TEXT,
     address TEXT,
+    bio TEXT,
+    specialization TEXT,
+    portfolio_url TEXT,
     role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    reputation_points INTEGER DEFAULT 0,
+    reputation_level TEXT DEFAULT 'beginner' CHECK (reputation_level IN ('beginner', 'active', 'professional', 'trusted', 'expert')),
+    jobs_rating DECIMAL(3,2) DEFAULT 0,
+    services_rating DECIMAL(3,2) DEFAULT 0,
+    products_rating DECIMAL(3,2) DEFAULT 0,
+    overall_rating DECIMAL(3,2) DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -65,7 +99,7 @@ BEGIN
     new.id, 
     new.raw_user_meta_data->>'full_name', 
     new.email, 
-    COALESCE(new.raw_user_meta_data->>'role', 'user')
+    'user'
   );
   RETURN NEW;
 END;
@@ -195,6 +229,9 @@ CREATE TABLE IF NOT EXISTS public.products (
     image_url TEXT,
     category TEXT,
     stock INTEGER DEFAULT 1,
+    governorate TEXT,
+    images TEXT[] DEFAULT '{}',
+    moderation_status TEXT DEFAULT 'pending' CHECK (moderation_status IN ('pending', 'approved', 'rejected')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -207,6 +244,22 @@ CREATE TABLE IF NOT EXISTS public.services (
     price DECIMAL(10, 2) NOT NULL,
     image_url TEXT,
     delivery_time_days INTEGER DEFAULT 1,
+    category TEXT,
+    portfolio_images TEXT[] DEFAULT '{}',
+    packages JSONB DEFAULT '[]',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.service_orders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    service_id UUID REFERENCES public.services(id) ON DELETE CASCADE,
+    client_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    freelancer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    package_name TEXT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    status TEXT DEFAULT 'new' CHECK (status IN ('new', 'in_progress', 'delivered', 'accepted', 'completed', 'cancelled')),
+    requirements TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -242,8 +295,11 @@ CREATE TABLE IF NOT EXISTS public.jobs (
     requirements TEXT,
     salary_range TEXT,
     location TEXT,
-    job_type TEXT CHECK (job_type IN ('Full-time', 'Part-time', 'Contract', 'Freelance')),
+    job_type TEXT CHECK (job_type IN ('Full-time', 'Part-time', 'Contract', 'Freelance', 'Remote', 'Internship')),
     status TEXT DEFAULT 'Open' CHECK (status IN ('Open', 'Closed')),
+    skills TEXT[] DEFAULT '{}',
+    deadline DATE,
+    governorate TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -318,6 +374,31 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 );
 
 -- ==========================================
+-- 7.5. نظام الرسائل الموحد (UNIFIED MESSAGING SYSTEM)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS public.conversations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    participant_1 UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    participant_2 UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    context_type TEXT CHECK (context_type IN ('job', 'service', 'product', 'general')),
+    context_id UUID,
+    context_title TEXT,
+    last_message_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT check_distinct_participants CHECK (participant_1 <> participant_2)
+);
+
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID REFERENCES public.conversations(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT false,
+    is_flagged BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ==========================================
 -- 8. نظام الحماية (RLS POLICIES)
 -- ==========================================
 
@@ -342,9 +423,48 @@ ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.learning_paths ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.learning_path_courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workshops ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 -- سياسات البروفايلات
-CREATE POLICY "Profiles are public" ON public.profiles FOR SELECT USING (true);
+-- دالة للتحقق مما إذا كان المستخدم مسؤولاً (أدمن) دون إحداث تكرار حلقي في السياسات
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  IF user_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = user_id AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- سياسات البروفايلات
+DROP POLICY IF EXISTS "Profiles are public" ON public.profiles;
+DROP POLICY IF EXISTS "Profiles are public for select of public info" ON public.profiles;
+CREATE POLICY "Profiles are public for select of public info" ON public.profiles FOR SELECT USING (
+  -- 1. Owner can select own profile
+  auth.uid() = public.profiles.id OR
+  -- 2. Admin can select any profile (using JWT to avoid recursion)
+  (auth.jwt() -> 'user_metadata' ->> 'role' = 'admin') OR
+  -- 3. If someone is a seller of any product/service, their profile is visible
+  EXISTS (SELECT 1 FROM public.products p WHERE p.seller_id = public.profiles.id) OR
+  EXISTS (SELECT 1 FROM public.services s WHERE s.freelancer_id = public.profiles.id) OR
+  -- 4. If someone is a buyer of an order where the current user is the merchant
+  EXISTS (
+    SELECT 1 FROM public.orders o
+    JOIN public.order_items oi ON oi.order_id = o.id
+    JOIN public.products p ON p.id = oi.product_id
+    WHERE o.buyer_id = public.profiles.id AND p.seller_id = auth.uid()
+  ) OR
+  -- 5. If someone is the author of a community post/comment/report/job
+  EXISTS (SELECT 1 FROM public.posts p WHERE p.user_id = public.profiles.id) OR
+  EXISTS (SELECT 1 FROM public.post_comments pc WHERE pc.user_id = public.profiles.id) OR
+  EXISTS (SELECT 1 FROM public.jobs j WHERE j.employer_id = public.profiles.id)
+);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
 -- سياسات المجتمع (بوستات)
@@ -364,36 +484,39 @@ CREATE POLICY "Users can manage own comments" ON public.post_comments FOR ALL US
 
 -- سياسات البلاغات
 ALTER TABLE public.post_reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins can view all reports" ON public.post_reports;
 CREATE POLICY "Admins can view all reports" ON public.post_reports FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    reporter_id = auth.uid() OR public.is_admin(auth.uid())
 );
-CREATE POLICY "Users can create reports" ON public.post_reports FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Users can create reports" ON public.post_reports;
+CREATE POLICY "Users can create reports" ON public.post_reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
+DROP POLICY IF EXISTS "Admins can manage reports" ON public.post_reports;
 CREATE POLICY "Admins can manage reports" ON public.post_reports FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات الكورسات
 CREATE POLICY "Published courses are public" ON public.courses FOR SELECT USING (status = 'Published');
 CREATE POLICY "Admins manage courses" ON public.courses FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات مسارات التعلم
 CREATE POLICY "Published learning paths are public" ON public.learning_paths FOR SELECT USING (status = 'Published');
 CREATE POLICY "Admins manage learning paths" ON public.learning_paths FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات ربط مسارات التعلم بالكورسات
 CREATE POLICY "Learning path courses are public" ON public.learning_path_courses FOR SELECT USING (true);
 CREATE POLICY "Admins manage learning path courses" ON public.learning_path_courses FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات الورش والتدريبات
 CREATE POLICY "Workshops are public" ON public.workshops FOR SELECT USING (true);
 CREATE POLICY "Admins manage workshops" ON public.workshops FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات المنتجات والخدمات
@@ -403,7 +526,7 @@ CREATE POLICY "Sellers manage own products" ON public.products FOR ALL USING (au
 -- Services
 DROP POLICY IF EXISTS "Admins can manage services" ON public.services;
 CREATE POLICY "Admins can manage services" ON public.services FOR ALL USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role' = 'admin')
+    public.is_admin(auth.uid())
 );
 
 DROP POLICY IF EXISTS "Public users can view services" ON public.services;
@@ -421,7 +544,7 @@ CREATE POLICY "Categories are public" ON public.categories FOR SELECT USING (tru
 
 DROP POLICY IF EXISTS "Admins manage categories" ON public.categories;
 CREATE POLICY "Admins manage categories" ON public.categories FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات التسجيل في الكورسات (ENROLLMENTS)
@@ -433,7 +556,7 @@ CREATE POLICY "Users can insert own enrollments" ON public.enrollments FOR INSER
 
 DROP POLICY IF EXISTS "Admins manage all enrollments" ON public.enrollments;
 CREATE POLICY "Admins manage all enrollments" ON public.enrollments FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات فصول ومحاضرات الكورس (SECTIONS & LECTURES)
@@ -442,7 +565,7 @@ CREATE POLICY "Course sections are public" ON public.course_sections FOR SELECT 
 
 DROP POLICY IF EXISTS "Admins manage course sections" ON public.course_sections;
 CREATE POLICY "Admins manage course sections" ON public.course_sections FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 DROP POLICY IF EXISTS "Course lectures are public" ON public.course_lectures;
@@ -450,7 +573,7 @@ CREATE POLICY "Course lectures are public" ON public.course_lectures FOR SELECT 
 
 DROP POLICY IF EXISTS "Admins manage course lectures" ON public.course_lectures;
 CREATE POLICY "Admins manage course lectures" ON public.course_lectures FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات تقدم المستخدم (USER PROGRESS)
@@ -469,7 +592,7 @@ CREATE POLICY "Users can create own certificate requests" ON public.certificate_
 
 DROP POLICY IF EXISTS "Admins manage certificate requests" ON public.certificate_requests;
 CREATE POLICY "Admins manage certificate requests" ON public.certificate_requests FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات الطلبات والمشتريات (ORDERS & ORDER ITEMS)
@@ -481,22 +604,22 @@ CREATE POLICY "Users can create own orders" ON public.orders FOR INSERT WITH CHE
 
 DROP POLICY IF EXISTS "Admins manage all orders" ON public.orders;
 CREATE POLICY "Admins manage all orders" ON public.orders FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 DROP POLICY IF EXISTS "Users can view own order items" ON public.order_items;
 CREATE POLICY "Users can view own order items" ON public.order_items FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.orders WHERE id = order_id AND buyer_id = auth.uid())
+    EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_id AND o.buyer_id = auth.uid())
 );
 
 DROP POLICY IF EXISTS "Users can create own order items" ON public.order_items;
 CREATE POLICY "Users can create own order items" ON public.order_items FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM public.orders WHERE id = order_id AND buyer_id = auth.uid())
+    EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_id AND o.buyer_id = auth.uid())
 );
 
 DROP POLICY IF EXISTS "Admins manage order items" ON public.order_items;
 CREATE POLICY "Admins manage order items" ON public.order_items FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- سياسات الوظائف والتقدم للوظائف (JOBS & JOB APPLICATIONS)
@@ -505,12 +628,12 @@ CREATE POLICY "Jobs are public" ON public.jobs FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Employers/Admins manage jobs" ON public.jobs;
 CREATE POLICY "Employers/Admins manage jobs" ON public.jobs FOR ALL USING (
-    auth.uid() = employer_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    auth.uid() = employer_id OR public.is_admin(auth.uid())
 );
 
 DROP POLICY IF EXISTS "Users can view relevant job applications" ON public.job_applications;
 CREATE POLICY "Users can view relevant job applications" ON public.job_applications FOR SELECT USING (
-    auth.uid() = applicant_id OR EXISTS (SELECT 1 FROM public.jobs WHERE id = job_id AND employer_id = auth.uid())
+    auth.uid() = applicant_id OR EXISTS (SELECT 1 FROM public.jobs j WHERE j.id = job_id AND j.employer_id = auth.uid())
 );
 
 DROP POLICY IF EXISTS "Users can submit job applications" ON public.job_applications;
@@ -518,8 +641,8 @@ CREATE POLICY "Users can submit job applications" ON public.job_applications FOR
 
 DROP POLICY IF EXISTS "Employers/Admins manage job applications" ON public.job_applications;
 CREATE POLICY "Employers/Admins manage job applications" ON public.job_applications FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.jobs WHERE id = job_id AND employer_id = auth.uid()) OR 
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    EXISTS (SELECT 1 FROM public.jobs j WHERE j.id = job_id AND j.employer_id = auth.uid()) OR 
+    public.is_admin(auth.uid())
 );
 
 -- سياسات المفضلة والتقييمات (FAVORITES & REVIEWS)
@@ -531,6 +654,66 @@ CREATE POLICY "Reviews are public" ON public.reviews FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Users can manage own reviews" ON public.reviews;
 CREATE POLICY "Users can manage own reviews" ON public.reviews FOR ALL USING (auth.uid() = user_id);
+
+-- سياسات طلبات الخدمات (SERVICE ORDERS)
+DROP POLICY IF EXISTS "Users can view relevant service orders" ON public.service_orders;
+CREATE POLICY "Users can view relevant service orders" ON public.service_orders FOR SELECT USING (
+    auth.uid() = client_id OR auth.uid() = freelancer_id OR public.is_admin(auth.uid())
+);
+
+DROP POLICY IF EXISTS "Users can create own service orders" ON public.service_orders;
+CREATE POLICY "Users can create own service orders" ON public.service_orders FOR INSERT WITH CHECK (
+    auth.uid() = client_id
+);
+
+DROP POLICY IF EXISTS "Users can update relevant service orders" ON public.service_orders;
+CREATE POLICY "Users can update relevant service orders" ON public.service_orders FOR UPDATE USING (
+    auth.uid() = client_id OR auth.uid() = freelancer_id OR public.is_admin(auth.uid())
+);
+
+-- سياسات المحادثات (CONVERSATIONS)
+DROP POLICY IF EXISTS "Users can view own conversations" ON public.conversations;
+CREATE POLICY "Users can view own conversations" ON public.conversations FOR SELECT USING (
+    auth.uid() = participant_1 OR auth.uid() = participant_2 OR public.is_admin(auth.uid())
+);
+
+DROP POLICY IF EXISTS "Users can create own conversations" ON public.conversations;
+CREATE POLICY "Users can create own conversations" ON public.conversations FOR INSERT WITH CHECK (
+    auth.uid() = participant_1 OR auth.uid() = participant_2
+);
+
+DROP POLICY IF EXISTS "Users can update own conversations" ON public.conversations;
+CREATE POLICY "Users can update own conversations" ON public.conversations FOR UPDATE USING (
+    auth.uid() = participant_1 OR auth.uid() = participant_2 OR public.is_admin(auth.uid())
+);
+
+-- سياسات الرسائل (MESSAGES)
+DROP POLICY IF EXISTS "Users can view relevant messages" ON public.messages;
+CREATE POLICY "Users can view relevant messages" ON public.messages FOR SELECT USING (
+    EXISTS (
+        SELECT 1 FROM public.conversations c 
+        WHERE c.id = conversation_id 
+          AND (c.participant_1 = auth.uid() OR c.participant_2 = auth.uid())
+    ) OR public.is_admin(auth.uid())
+);
+
+DROP POLICY IF EXISTS "Users can create own messages" ON public.messages;
+CREATE POLICY "Users can create own messages" ON public.messages FOR INSERT WITH CHECK (
+    auth.uid() = sender_id AND EXISTS (
+        SELECT 1 FROM public.conversations c 
+        WHERE c.id = conversation_id 
+          AND (c.participant_1 = auth.uid() OR c.participant_2 = auth.uid())
+    )
+);
+
+DROP POLICY IF EXISTS "Users can update relevant messages" ON public.messages;
+CREATE POLICY "Users can update relevant messages" ON public.messages FOR UPDATE USING (
+    EXISTS (
+        SELECT 1 FROM public.conversations c 
+        WHERE c.id = conversation_id 
+          AND (c.participant_1 = auth.uid() OR c.participant_2 = auth.uid())
+    ) OR public.is_admin(auth.uid())
+);
 
 -- ==========================================
 -- 11. إصلاح المستخدمين الحاليين (FIX EXISTING USERS)
@@ -550,8 +733,8 @@ ON CONFLICT (id) DO NOTHING;
 -- ==========================================
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+-- GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;  -- Removed overly broad grant
+-- GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;  -- Removed overly broad grant
 
 -- ==========================================
 -- 10. تفعيل التحديث التلقائي (TRIGGERS)
@@ -563,98 +746,212 @@ CREATE TRIGGER update_services_updated_at BEFORE UPDATE ON public.services FOR E
 CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON public.jobs FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_learning_paths_updated_at BEFORE UPDATE ON public.learning_paths FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_workshops_updated_at BEFORE UPDATE ON public.workshops FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_service_orders_updated_at BEFORE UPDATE ON public.service_orders FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 -- ==========================================
 -- 12. سياسات التخزين (STORAGE POLICIES)
 -- ==========================================
 
--- إنشاء الباكتس المطلوبة إذا لم تكن موجودة
+-- إنشاء الباكتس المطلوبة وتحديث حالة الخصوصية للباكتس الحساسة
 INSERT INTO storage.buckets (id, name, public)
 VALUES 
     ('uploads', 'uploads', true),
-    ('payment-proofs', 'payment-proofs', true),
-    ('certificates', 'certificates', true),
+    ('payment-proofs', 'payment-proofs', false),
+    ('certificates', 'certificates', false),
     ('course-content', 'course-content', true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
 
--- سياسات المشاهدة العامة للملفات
+-- سياسات المشاهدة العامة للملفات العامة
 DROP POLICY IF EXISTS "Public Select Uploads" ON storage.objects;
 CREATE POLICY "Public Select Uploads" ON storage.objects FOR SELECT USING (bucket_id = 'uploads');
-
-DROP POLICY IF EXISTS "Public Select Payment Proofs" ON storage.objects;
-CREATE POLICY "Public Select Payment Proofs" ON storage.objects FOR SELECT USING (bucket_id = 'payment-proofs');
-
-DROP POLICY IF EXISTS "Public Select Certificates" ON storage.objects;
-CREATE POLICY "Public Select Certificates" ON storage.objects FOR SELECT USING (bucket_id = 'certificates');
 
 DROP POLICY IF EXISTS "Public Select Course Content" ON storage.objects;
 CREATE POLICY "Public Select Course Content" ON storage.objects FOR SELECT USING (bucket_id = 'course-content');
 
--- سياسات الرفع للمستخدمين المسجلين
+-- سياسات المشاهدة للملفات الخاصة (المستندات الحساسة)
+DROP POLICY IF EXISTS "Public Select Payment Proofs" ON storage.objects;
+CREATE POLICY "Allow Select Payment Proofs" ON storage.objects FOR SELECT USING (
+    bucket_id = 'payment-proofs' AND (
+        auth.uid()::text = split_part(name, '/', 1) OR
+        public.is_admin(auth.uid())
+    )
+);
+
+DROP POLICY IF EXISTS "Public Select Certificates" ON storage.objects;
+CREATE POLICY "Allow Select Certificates" ON storage.objects FOR SELECT USING (
+    bucket_id = 'certificates' AND (
+        EXISTS (
+            SELECT 1 FROM public.certificate_requests cr
+            WHERE cr.id::text = substring(split_part(name, '/', 2) from 1 for 36)
+              AND (cr.user_id = auth.uid() OR public.is_admin(auth.uid()))
+        )
+    )
+);
+
+-- سياسات الرفع للمستخدمين المسجلين والمديرين
 DROP POLICY IF EXISTS "Authenticated Insert Uploads" ON storage.objects;
-CREATE POLICY "Authenticated Insert Uploads" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'uploads' AND auth.role() = 'authenticated');
+CREATE POLICY "Authenticated Insert Uploads" ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'uploads' AND 
+    auth.role() = 'authenticated' AND
+    (LOWER(storage.extension(name)) = ANY (ARRAY['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'pdf'])) AND
+    (COALESCE((metadata->>'size')::int, 0) < 10485760) -- الحد الأقصى 10 ميجابايت
+);
 
 DROP POLICY IF EXISTS "Authenticated Insert Payment Proofs" ON storage.objects;
-CREATE POLICY "Authenticated Insert Payment Proofs" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'payment-proofs' AND auth.role() = 'authenticated');
+CREATE POLICY "Authenticated Insert Payment Proofs" ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'payment-proofs' AND 
+    auth.role() = 'authenticated' AND
+    auth.uid()::text = split_part(name, '/', 1) AND
+    (LOWER(storage.extension(name)) = ANY (ARRAY['jpg', 'jpeg', 'png', 'pdf'])) AND
+    (COALESCE((metadata->>'size')::int, 0) < 5242880) -- الحد الأقصى 5 ميجابايت
+);
 
 DROP POLICY IF EXISTS "Authenticated Insert Certificates" ON storage.objects;
-CREATE POLICY "Authenticated Insert Certificates" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'certificates' AND auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Admins Insert Certificates" ON storage.objects;
+CREATE POLICY "Admins Insert Certificates" ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'certificates' AND
+    public.is_admin(auth.uid())
+);
 
 DROP POLICY IF EXISTS "Authenticated Insert Course Content" ON storage.objects;
-CREATE POLICY "Authenticated Insert Course Content" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'course-content' AND auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Admins Insert Course Content" ON storage.objects;
+CREATE POLICY "Admins Insert Course Content" ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'course-content' AND
+    public.is_admin(auth.uid())
+);
 
 -- سياسة تحكم كاملة للمشرفين
 DROP POLICY IF EXISTS "Admins Manage Storage Objects" ON storage.objects;
 CREATE POLICY "Admins Manage Storage Objects" ON storage.objects FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    public.is_admin(auth.uid())
 );
 
 -- ==========================================
--- 13. وظائف المساعدة (HELPER FUNCTIONS)
+-- 9. وظائف الحماية الإضافية (SECURITY HELPER FUNCTIONS & TRIGGERS)
 -- ==========================================
 
--- وظيفة تحديث التوقيت تلقائياً
-CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+-- زناد لحماية حقل الرول من التعديل الذاتي من قبل المستخدمين العاديين
+CREATE OR REPLACE FUNCTION public.check_profile_update()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
+  -- التحقق من أن العملية تتم من خلال سياق طلب خارجي وليس من مدير قاعدة البيانات مباشرة
+  IF auth.uid() IS NOT NULL AND NEW.role IS DISTINCT FROM OLD.role THEN
+    -- التحقق مما إذا كان المستخدم الحالي مسؤولاً (أدمن)
+    IF NOT public.is_admin(auth.uid()) THEN
+      NEW.role = OLD.role;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- تفعيل الزناد قبل التعديل على جدول البروفايلات
+DROP TRIGGER IF EXISTS check_profile_role_update ON public.profiles;
+CREATE TRIGGER check_profile_role_update
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.check_profile_update();
+
+-- دالة آمنة لتحديث أدوار المستخدمين من قبل المشرفين فقط
+CREATE OR REPLACE FUNCTION public.update_user_role(target_user_id UUID, new_role TEXT)
+RETURNS void AS $$
+BEGIN
+  -- التحقق من صلاحيات الأدمن للمستخدم الحالي
+  IF NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'Not authorized. Admin role required.';
+  END IF;
+
+  -- تحديث الدور
+  UPDATE public.profiles
+  SET role = new_role
+  WHERE id = target_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- دالة آمنة لحذف بروفايل وحساب المستخدم بالكامل من قبل المشرفين فقط
+CREATE OR REPLACE FUNCTION public.delete_user(target_user_id UUID)
+RETURNS void AS $$
+BEGIN
+  -- التحقق من صلاحيات الأدمن للمستخدم الحالي
+  IF NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'Not authorized. Admin role required.';
+  END IF;
+
+  -- حذف حساب المستخدم بالكامل من auth.users (والذي يمتد بالحذف المتتالي لجدول البروفايلات)
+  DELETE FROM auth.users WHERE id = target_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- دالة للتحقق من عدم تجاوز الحد اليومي لنشر الوظائف (10 وظائف يومياً)
+CREATE OR REPLACE FUNCTION public.check_job_limit_daily()
+RETURNS TRIGGER AS $$
+DECLARE
+    job_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO job_count
+    FROM public.jobs
+    WHERE employer_id = NEW.employer_id
+      AND created_at >= NOW() - INTERVAL '1 day';
+      
+    IF job_count >= 10 THEN
+        RAISE EXCEPTION 'You have reached the maximum limit of 10 jobs per day.';
+    END IF;
+    
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- وظائف عدادات المجتمع
-CREATE OR REPLACE FUNCTION public.increment_likes(post_id_val UUID)
-RETURNS void AS $$
+DROP TRIGGER IF EXISTS trg_check_job_limit ON public.jobs;
+CREATE TRIGGER trg_check_job_limit
+    BEFORE INSERT ON public.jobs
+    FOR EACH ROW
+    EXECUTE FUNCTION public.check_job_limit_daily();
+
+-- دالة لفحص الرسائل وتمييز أرقام الهواتف المصرية
+CREATE OR REPLACE FUNCTION public.flag_egyptian_phone_numbers()
+RETURNS TRIGGER AS $$
+DECLARE
+    cleaned_content TEXT;
 BEGIN
-    UPDATE public.posts
-    SET likes_count = likes_count + 1
-    WHERE id = post_id_val;
+    cleaned_content := regexp_replace(NEW.content, '[\s\-\_\(\)\+\.\,]+', '', 'g');
+    
+    IF cleaned_content ~ '(20|0)?1[0125][0-9]{8}' THEN
+        NEW.is_flagged := true;
+    END IF;
+    
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION public.decrement_likes(post_id_val UUID)
-RETURNS void AS $$
+DROP TRIGGER IF EXISTS trg_flag_egyptian_phone ON public.messages;
+CREATE TRIGGER trg_flag_egyptian_phone
+    BEFORE INSERT OR UPDATE ON public.messages
+    FOR EACH ROW
+    EXECUTE FUNCTION public.flag_egyptian_phone_numbers();
+
+-- دالة لتحديث تاريخ آخر رسالة في المحادثة تلقائياً
+CREATE OR REPLACE FUNCTION public.update_conversation_last_message()
+RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE public.posts
-    SET likes_count = GREATEST(0, likes_count - 1)
-    WHERE id = post_id_val;
+    UPDATE public.conversations
+    SET last_message_at = NEW.created_at
+    WHERE id = NEW.conversation_id;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION public.increment_comments(post_id_val UUID)
-RETURNS void AS $$
-BEGIN
-    UPDATE public.posts
-    SET comments_count = comments_count + 1
-    WHERE id = post_id_val;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+DROP TRIGGER IF EXISTS trg_update_conversation_time ON public.messages;
+CREATE TRIGGER trg_update_conversation_time
+    AFTER INSERT ON public.messages
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_conversation_last_message();
 
-CREATE OR REPLACE FUNCTION public.decrement_comments(post_id_val UUID)
-RETURNS void AS $$
-BEGIN
-    UPDATE public.posts
-    SET comments_count = GREATEST(0, comments_count - 1)
-    WHERE id = post_id_val;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 1. منح الصلاحيات الكاملة للأدوار الافتراضية على جميع الجداول والدوال الحالية في قاعدة البيانات
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, authenticated, anon, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, authenticated, anon, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, authenticated, anon, service_role;
+
+-- 2. تفعيل منح الصلاحيات تلقائياً لأي جدول، دالة، أو تسلسل يتم إنشاؤه مستقبلاً
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, authenticated, anon, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, authenticated, anon, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, authenticated, anon, service_role;

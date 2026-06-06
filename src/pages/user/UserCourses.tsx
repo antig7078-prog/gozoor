@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { PageContainer } from '../../components/shared/PageContainer';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { courseService } from '../../services/courseService';
+import { enrollmentService } from '../../services/enrollmentService';
+import { userService } from '../../services/userService';
 import toast from 'react-hot-toast';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, BookOpen, User, Star, TrendingUp, Sparkles, Heart, Trophy, GraduationCap, Users, PlayCircle, Eye } from 'lucide-react';
@@ -26,19 +28,13 @@ export const UserCourses = () => {
             setIsLoading(true);
             try {
                 // Fetch Courses
-                const { data: coursesData, error: coursesError } = await supabase
-                    .from('courses')
-                    .select('*, course_sections(course_lectures(id))')
-                    .eq('status', 'Published')
-                    .eq('visibility', 'Public')
-                    .order('created_at', { ascending: false });
-
-                if (coursesError) throw coursesError;
+                const { data: coursesData, error: coursesError } = await courseService.getPublishedPublicCoursesWithLectures();
+                if (coursesError) throw new Error(coursesError);
                 setCourses(coursesData || []);
 
                 // Fetch Stats
-                const { count: studentCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'user');
-                const { count: enrollCount } = await supabase.from('enrollments').select('*', { count: 'exact', head: true });
+                const { count: studentCount } = await userService.getUserCount('user');
+                const { count: enrollCount } = await enrollmentService.getEnrollmentCount();
 
                 setStats({
                     students: (studentCount || 0).toLocaleString(),
@@ -47,32 +43,24 @@ export const UserCourses = () => {
                 });
 
                 // Fetch Categories
-                const { data: catData } = await supabase.from('categories').select('name').order('name');
+                const { data: catData } = await courseService.getCategories();
                 if (catData) {
-                    const dynamicCats = catData.map(c => c.name);
+                    const dynamicCats = catData.map((c: any) => c.name);
                     setCategories(['كل الأقسام', ...dynamicCats]);
                 }
 
                 // Fetch Most Viewed (Top 5)
-                const { data: mvData } = await supabase
-                    .from('courses')
-                    .select('*, course_sections(course_lectures(id))')
-                    .eq('status', 'Published')
-                    .order('views_count', { ascending: false })
-                    .limit(5);
+                const { data: mvData } = await courseService.getMostViewedCourses(5);
                 if (mvData) setMostViewed(mvData);
 
                 // Fetch Favorites
                 if (user) {
-                    const { data: favData } = await supabase
-                        .from('favorites')
-                        .select('course_id')
-                        .eq('user_id', user.id);
-                    if (favData) setFavoriteIds(favData.map(f => f.course_id));
+                    const { data: favData } = await courseService.getFavoriteIds();
+                    if (favData) setFavoriteIds(favData);
                 }
 
             } catch (error: any) {
-                toast.error('حدث خطأ أثناء تحميل البيانات.');
+                toast.error('حدث خطأ أثناء تحميل البيانات: ' + error.message);
                 console.error(error);
             } finally {
                 setIsLoading(false);
@@ -80,7 +68,7 @@ export const UserCourses = () => {
         };
 
         fetchAllData();
-    }, []);
+    }, [user]);
 
     const requireAuth = useRequireAuth();
 
@@ -89,17 +77,18 @@ export const UserCourses = () => {
 
         const isFav = favoriteIds.includes(courseId);
         try {
+            const { error } = await courseService.toggleFavorite(courseId, isFav);
+            if (error) throw new Error(error);
+            
             if (isFav) {
-                await supabase.from('favorites').delete().eq('user_id', user?.id).eq('course_id', courseId);
                 setFavoriteIds(prev => prev.filter(id => id !== courseId));
                 toast.success('تمت الإزالة من المفضلة');
             } else {
-                await supabase.from('favorites').insert([{ user_id: user?.id, course_id: courseId }]);
                 setFavoriteIds(prev => [...prev, courseId]);
                 toast.success('تمت الإضافة للمفضلة');
             }
-        } catch (error) {
-            toast.error('حدث خطأ ما');
+        } catch (error: any) {
+            toast.error(error.message || 'حدث خطأ ما');
         }
     };
 

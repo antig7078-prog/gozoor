@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PageContainer } from '../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../components/shared/PageHeader';
+import { courseService } from '../../services/courseService';
 
 export const AddCourse = () => {
     const { id } = useParams();
@@ -39,13 +40,20 @@ export const AddCourse = () => {
         introVideoUrl: '',
     });
 
+    const generateUUID = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    };
+
     // Curriculum State
     const [sections, setSections] = useState<any[]>([
         {
-            id: Date.now(),
+            id: generateUUID(),
             title: 'مقدمة الدورة',
             lectures: [
-                { id: Date.now() + 1, title: 'الترحيب بالمتدربين', type: 'Video', isFreePreview: true, videoUrl: '', textContent: '', fileUrl: '' }
+                { id: generateUUID(), title: 'الترحيب بالمتدربين', type: 'Video', isFreePreview: true, videoUrl: '', textContent: '', fileUrl: '' }
             ]
         }
     ]);
@@ -186,35 +194,8 @@ export const AddCourse = () => {
             }
 
             if (currentCourseId) {
-                if (isEditing) {
-                    await supabase.from('course_sections').delete().eq('course_id', currentCourseId);
-                }
-
-                for (let i = 0; i < sections.length; i++) {
-                    const sec = sections[i];
-                    const { data: newSec, error: secErr } = await supabase
-                        .from('course_sections')
-                        .insert({ course_id: currentCourseId, title: sec.title, sort_order: i })
-                        .select()
-                        .single();
-
-                    if (secErr || !newSec) continue;
-
-                    const lecturesToInsert = sec.lectures.map((l: any, lIdx: number) => ({
-                        section_id: newSec.id,
-                        title: l.title,
-                        lecture_type: l.type,
-                        is_free_preview: l.is_free_preview,
-                        video_url: l.video_url || null,
-                        file_url: l.file_url || null,
-                        text_content: l.textContent || null,
-                        sort_order: lIdx
-                    }));
-
-                    if (lecturesToInsert.length > 0) {
-                        await supabase.from('course_lectures').insert(lecturesToInsert);
-                    }
-                }
+                const { error: syncError } = await courseService.syncCurriculum(currentCourseId, sections);
+                if (syncError) throw new Error(syncError);
             }
 
             toast.success(status === 'Published' ? 'تم نشر الدورة بنجاح!' : 'تم حفظ المسودة بنجاح!');
@@ -227,26 +208,26 @@ export const AddCourse = () => {
     };
 
     const addSection = () => {
-        setSections([...sections, { id: Date.now(), title: 'قسم جديد', lectures: [] }]);
+        setSections([...sections, { id: generateUUID(), title: 'قسم جديد', lectures: [] }]);
     };
 
-    const deleteSection = (sectionId: number) => {
+    const deleteSection = (sectionId: string | number) => {
         setSections(sections.filter(sec => sec.id !== sectionId));
     };
 
-    const addLecture = (sectionId: number, type: string) => {
+    const addLecture = (sectionId: string | number, type: string) => {
         setSections(sections.map(sec => {
             if (sec.id === sectionId) {
                 return {
                     ...sec,
-                    lectures: [...sec.lectures, { id: Date.now(), title: 'درس جديد', type, isFreePreview: false, videoUrl: '', fileUrl: '', textContent: '' }]
+                    lectures: [...sec.lectures, { id: generateUUID(), title: 'درس جديد', type, isFreePreview: false, videoUrl: '', fileUrl: '', textContent: '' }]
                 };
             }
             return sec;
         }));
     };
 
-    const deleteLecture = (sectionId: number, lectureId: number) => {
+    const deleteLecture = (sectionId: string | number, lectureId: string | number) => {
         setSections(sections.map(sec => {
             if (sec.id === sectionId) {
                 return {
@@ -258,7 +239,7 @@ export const AddCourse = () => {
         }));
     };
 
-    const updateLecture = (sectionId: number, lectureId: number, field: string, value: any) => {
+    const updateLecture = (sectionId: string | number, lectureId: string | number, field: string, value: any) => {
         setSections(sections.map(sec => {
             if (sec.id === sectionId) {
                 return {

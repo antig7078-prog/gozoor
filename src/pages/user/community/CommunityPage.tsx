@@ -5,7 +5,8 @@ import {
     Trash2, Users, Sparkles, X,
     AlertTriangle
 } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+import { communityService } from '../../../services/communityService';
+import { storageService } from '../../../services/storageService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { PageHeader } from '../../../components/shared/PageHeader';
@@ -14,6 +15,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
 import { ConfirmModal } from '../../../components/shared/ConfirmModal';
+import { sanitizeInput } from '../../../utils/sanitize';
 
 interface Comment {
     id: string;
@@ -104,44 +106,19 @@ export const CommunityPage = () => {
     };
 
     const uploadImage = async (file: File): Promise<string | null> => {
-        try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-            const filePath = `posts/${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('uploads')
-                .upload(filePath, file);
-
-            if (uploadError) throw uploadError;
-
-            const { data } = supabase.storage
-                .from('uploads')
-                .getPublicUrl(filePath);
-
-            return data.publicUrl;
-        } catch (error) {
+        const { url, error } = await storageService.uploadMedia(file);
+        if (error) {
             console.error('Error uploading image:', error);
             return null;
         }
+        return url;
     };
 
     const fetchPosts = async () => {
         try {
-            const { data, error } = await supabase
-                .from('posts')
-                .select(`
-                    *,
-                    profiles:user_id (full_name, avatar_url),
-                    post_likes (user_id),
-                    post_comments (
-                        *,
-                        profiles:user_id (full_name, avatar_url)
-                    )
-                `)
-                .order('created_at', { ascending: false });
+            const { data, error } = await communityService.getPosts();
 
-            if (error) throw error;
+            if (error) throw new Error(error);
 
             if (data) {
                 const formattedPosts: Post[] = data.map((post: any) => {
@@ -182,7 +159,7 @@ export const CommunityPage = () => {
                 });
                 setPosts(formattedPosts);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching posts:', error);
         } finally {
             setLoading(false);
@@ -209,21 +186,18 @@ export const CommunityPage = () => {
                 }
             }
 
-            const { error } = await supabase.from('posts').insert([{
-                user_id: user?.id,
-                content: newPostContent.trim(),
-                image_url: imageUrl
-            }]);
+            const sanitizedContent = sanitizeInput(newPostContent);
+            const { error } = await communityService.createPost(sanitizedContent, imageUrl);
 
-            if (error) throw error;
+            if (error) throw new Error(error);
 
             setNewPostContent('');
             removeImage();
             fetchPosts();
             toast.success('تم النشر بنجاح! 🚀');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating post:', error);
-            toast.error('حدث خطأ أثناء النشر');
+            toast.error(error.message || 'حدث خطأ أثناء النشر');
         } finally {
             setIsPosting(false);
         }
@@ -238,28 +212,8 @@ export const CommunityPage = () => {
         const isLiked = post?.liked_by?.includes(userId);
 
         try {
-            if (isLiked) {
-                // Unlike
-                const { error: deleteError } = await supabase
-                    .from('post_likes')
-                    .delete()
-                    .match({ post_id: postId, user_id: userId });
-
-                if (deleteError) throw deleteError;
-
-                // Update count
-                await supabase.rpc('decrement_likes', { post_id_val: postId });
-            } else {
-                // Like
-                const { error: insertError } = await supabase
-                    .from('post_likes')
-                    .insert([{ post_id: postId, user_id: userId }]);
-
-                if (insertError) throw insertError;
-
-                // Update count
-                await supabase.rpc('increment_likes', { post_id_val: postId });
-            }
+            const { error } = await communityService.toggleLike(postId, !!isLiked);
+            if (error) throw new Error(error);
 
             // Refresh posts locally for better UX
             setPosts(prev => prev.map(p => {
@@ -274,9 +228,9 @@ export const CommunityPage = () => {
                 };
             }));
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error toggling like:', error);
-            toast.error('عذراً، حدث خطأ أثناء محاولة الإعجاب');
+            toast.error(error.message || 'عذراً، حدث خطأ أثناء محاولة الإعجاب');
         }
     };
 
@@ -286,27 +240,19 @@ export const CommunityPage = () => {
         if (!content || !user) return;
 
         try {
-            const { error: commentError } = await supabase
-                .from('post_comments')
-                .insert([{
-                    post_id: postId,
-                    user_id: user.id,
-                    parent_id: replyingTo?.postId === postId ? replyingTo.commentId : null,
-                    content
-                }]);
+            const parentId = replyingTo?.postId === postId ? replyingTo.commentId : null;
+            const sanitizedContent = sanitizeInput(content);
+            const { error } = await communityService.createComment(postId, sanitizedContent, parentId);
 
-            if (commentError) throw commentError;
-
-            // Update count
-            await supabase.rpc('increment_comments', { post_id_val: postId });
+            if (error) throw new Error(error);
 
             setCommentInputs(prev => ({ ...prev, [postId]: '' }));
             setReplyingTo(null);
             fetchPosts();
             toast.success(replyingTo ? 'تم إضافة الرد' : 'تم إضافة التعليق');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error adding comment:', error);
-            toast.error('حدث خطأ أثناء التعليق');
+            toast.error(error.message || 'حدث خطأ أثناء التعليق');
         }
     };
 
@@ -322,17 +268,13 @@ export const CommunityPage = () => {
         }
         setReportModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('post_reports').insert([{
-                post_id: reportModal.postId,
-                reporter_id: user?.id,
-                reason: reportModal.reason.trim()
-            }]);
-            if (error) throw error;
+            const { error } = await communityService.reportPost(reportModal.postId, reportModal.reason.trim());
+            if (error) throw new Error(error);
             toast.success('تم إرسال البلاغ للادمن للمراجعة');
             setReportModal({ isOpen: false, postId: null, reason: '', isLoading: false });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error reporting post:', error);
-            toast.error('حدث خطأ أثناء إرسال البلاغ');
+            toast.error(error.message || 'حدث خطأ أثناء إرسال البلاغ');
             setReportModal(prev => ({ ...prev, isLoading: false }));
         }
     };
@@ -345,14 +287,14 @@ export const CommunityPage = () => {
         if (!deleteModal.postId) return;
         setDeleteModal(prev => ({ ...prev, isLoading: true }));
         try {
-            const { error } = await supabase.from('posts').delete().eq('id', deleteModal.postId);
-            if (error) throw error;
+            const { error } = await communityService.deletePost(deleteModal.postId);
+            if (error) throw new Error(error);
             setPosts(prev => prev.filter(p => p.id !== deleteModal.postId));
             toast.success('تم حذف البوست بنجاح');
             setDeleteModal({ isOpen: false, postId: null, isLoading: false });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting post:', error);
-            toast.error('حدث خطأ أثناء الحذف');
+            toast.error(error.message || 'حدث خطأ أثناء الحذف');
             setDeleteModal(prev => ({ ...prev, isLoading: false }));
         }
     };

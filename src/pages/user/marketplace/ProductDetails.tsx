@@ -202,13 +202,15 @@ export const ProductDetails = () => {
                                     {product.stock > 0 ? `${product.stock} قطع متوفرة` : 'نفدت الكمية'}
                                 </div>
                             </Card>
-                            <Card className="p-4 bg-surface-primary border-border-subtle/50" hoverable={false}>
+                            <Link to={`/profile/${product.seller_id}`} className="block">
+                            <Card className="p-4 bg-surface-primary border-border-subtle/50 hover:border-brand-primary/30 cursor-pointer" hoverable={true}>
                                 <div className="flex items-center gap-2 text-text-muted text-[10px] font-black uppercase tracking-widest mb-1">
                                     <User className="w-3.5 h-3.5" />
                                     التاجر
                                 </div>
-                                <div className="text-sm font-black text-text-primary">{product.profiles?.full_name || 'بائع معتمد'}</div>
+                                <div className="text-sm font-black text-brand-primary hover:underline">{product.profiles?.full_name || 'بائع معتمد'}</div>
                             </Card>
+                            </Link>
                         </div>
                     </div>
 
