@@ -1,0 +1,1 @@
+function e(e){return e?e.replace(/<[^>]*>/g,``).trim():``}function t(e){if(!e)return``;let t=e.trim(),n=t.toLowerCase();return n.startsWith(`javascript:`)||n.startsWith(`data:`)||n.startsWith(`vbscript:`)?``:t}export{t as n,e as t};
