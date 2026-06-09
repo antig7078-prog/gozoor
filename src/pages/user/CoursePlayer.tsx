@@ -290,7 +290,7 @@ export const CoursePlayer = () => {
 
                             {/* Certificate Request Section */}
                             {isEnrolled && progressPercentage === 100 && (
-                                <div className="mt-12 p-6 md:p-8 bg-gradient-to-br from-amber-500/20 to-amber-600/10 rounded-[1.5rem] md:rounded-[2.5rem] border border-amber-500/20 text-center">
+                                <div className="mt-12 p-6 md:p-8 bg-amber-500/15 rounded-[1.5rem] md:rounded-[2.5rem] border border-amber-500/20 text-center">
                                     <Trophy className="w-16 h-16 text-amber-500 mx-auto mb-4" />
                                     <h3 className="text-2xl font-black text-white mb-2">تهانينا! لقد أتممت المسار بالكامل</h3>
                                     <p className="text-amber-100/60 mb-6">يمكنك الآن طلب شهادة إتمام الدورة المعتمدة من منصة جذور</p>

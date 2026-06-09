@@ -99,7 +99,7 @@ export const UserProducts = () => {
                         <ShoppingBag className="w-16 h-16 text-slate-200" />
                     </div>
                     <h3 className="text-3xl font-black text-text-primary mb-4">لا توجد منتجات بعد</h3>
-                    <p className="text-text-muted font-bold max-w-sm mx-auto mb-10 leading-relaxed">ابدأ بعرض منتجاتك وأدواتك الزراعية في سوق جذور وشاركها مع المجتمع.</p>
+                    <p className="text-text-muted font-bold max-w-sm mx-auto mb-10 leading-relaxed">ابدأ بعرض منتجاتك وأدواتك في سوق جذور وشاركها مع المجتمع.</p>
                     <Link to="/marketplace/add" className="inline-flex items-center gap-3 px-10 py-5 bg-brand-primary text-white rounded-full font-black shadow-xl shadow-brand-primary/20 hover:scale-105 transition-all">
                         <Plus className="w-6 h-6" />
                         أضف أول منتج الآن
@@ -134,7 +134,7 @@ export const UserProducts = () => {
                                             <ShoppingBag className="w-16 h-16" />
                                         </div>
                                     )}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 </div>
 
                                 <div className="p-6 flex-1 flex flex-col">

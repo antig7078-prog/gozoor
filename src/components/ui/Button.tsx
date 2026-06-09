@@ -31,7 +31,7 @@ export const Button = ({
     outline: 'border-2 border-brand-primary text-brand-primary hover:bg-brand-primary/5',
     danger: 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white',
     ghost: 'text-slate-500 hover:bg-slate-100',
-    premium: 'bg-gradient-to-tr from-brand-primary-hover to-brand-accent text-white shadow-xl shadow-brand-primary/20 hover:scale-[1.02]'
+    premium: 'bg-brand-accent text-white hover:bg-brand-accent/90 shadow-xl shadow-brand-primary/20 hover:scale-[1.02]'
   };
 
   const sizes = {

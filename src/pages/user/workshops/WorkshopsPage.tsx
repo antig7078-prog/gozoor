@@ -35,7 +35,7 @@ export const WorkshopsPage = () => {
     return (
         <div className="space-y-12 pb-20">
             {/* Header */}
-            <div className="relative rounded-[3rem] overflow-hidden bg-gradient-to-br from-brand-primary to-brand-bg p-12 text-white">
+            <div className="relative rounded-[3rem] overflow-hidden bg-brand-primary p-12 text-white">
                 <div className="relative z-10 max-w-3xl space-y-6">
                     <Badge className="bg-white/10 text-white border-white/20">
                         <Sparkles className="w-3 h-3 ml-2" />
@@ -45,7 +45,7 @@ export const WorkshopsPage = () => {
                         تدريبات وورش عمل تفاعلية
                     </h1>
                     <p className="text-xl text-white/80 font-bold leading-relaxed">
-                        شارك في ورش عمل مباشرة ودورات تدريبية عملية يقدمها خبراء في المجال الزراعي لتعزيز مهاراتك الميدانية.
+                        شارك في ورش عمل مباشرة ودورات تدريبية عملية يقدمها خبراء في شتى المجالات والمهارات لتعزيز مسارك المهني.
                     </p>
                 </div>
             </div>
@@ -60,7 +60,7 @@ export const WorkshopsPage = () => {
                                     {workshop.image_url ? (
                                         <img src={workshop.image_url} alt={workshop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                     ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center text-slate-300">
+                                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
                                             <Calendar className="w-16 h-16 opacity-20" />
                                         </div>
                                     )}

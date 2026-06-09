@@ -44,7 +44,7 @@ export const PublicBrowseLayout = () => {
                     <div className="flex items-center justify-between h-16 sm:h-20">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 bg-gradient-to-tr from-brand-primary-hover to-brand-accent rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-transform duration-300">
+                            <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-transform duration-300">
                                 <Leaf className="w-5 h-5 text-white" />
                             </div>
                             <span className="text-xl font-black text-brand-bg hidden sm:block">جذور</span>

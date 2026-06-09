@@ -17,10 +17,13 @@ export const messagingService = {
         .select(`
           *,
           participant_1_profile:profiles!participant_1(*),
-          participant_2_profile:profiles!participant_2(*)
+          participant_2_profile:profiles!participant_2(*),
+          messages:messages(content, created_at, sender_id, is_read)
         `)
         .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
-        .order('last_message_at', { ascending: false });
+        .order('last_message_at', { ascending: false })
+        .order('created_at', { foreignTable: 'messages', ascending: false })
+        .limit(1, { foreignTable: 'messages' });
 
       if (error) throw error;
       return { data: data as Conversation[], error: null };

@@ -280,7 +280,7 @@ export const ServiceDetails = () => {
                     {/* Freelancer Profile Section */}
                     {service.provider && (
                         <div className="bg-white rounded-[var(--radius-card)] p-10 border border-border-subtle shadow-sm relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-primary/20 via-brand-primary to-brand-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute top-0 left-0 w-full h-1 bg-brand-primary opacity-0 group-hover:opacity-100 transition-opacity" />
 
                             <h2 className="text-2xl font-black text-text-primary mb-10 flex items-center gap-3">
                                 <div className="w-1.5 h-8 bg-brand-primary rounded-full"></div>

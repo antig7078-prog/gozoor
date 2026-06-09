@@ -5,6 +5,7 @@ import { Briefcase, MapPin, DollarSign, Clock, Send, FileText, CheckCircle2, Che
 import { Button } from '../../../components/ui/Button';
 import { SkillTags } from '../../../components/jobs/SkillTags';
 import { jobsService } from '../../../services/jobsService';
+import { notificationService } from '../../../services/notificationService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
 import { toast } from 'react-hot-toast';
@@ -72,6 +73,16 @@ export const JobDetailsPage = () => {
             toast.success('تم تقديم طلب التوظيف بنجاح!');
             setHasApplied(true);
             setShowApplyForm(false);
+            // Send notification to employer
+            if (job && job.employer_id) {
+                notificationService.sendNotification({
+                    userId: job.employer_id,
+                    title: 'تقديم جديد على وظيفة',
+                    content: `قام أحد المتقدمين بالتقديم على وظيفتك المعلنة "${job.title}".`,
+                    type: 'info',
+                    link: `/jobs/${job.id}/applicants`
+                }).catch(err => console.error('Error sending job application notification:', err));
+            }
         } catch (error: any) {
             toast.error(error.message || 'حدث خطأ أثناء التقديم');
             console.error(error);

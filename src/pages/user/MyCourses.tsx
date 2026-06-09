@@ -76,7 +76,7 @@ export const MyCourses = () => {
                 title={
                     <>متابعة <span className="text-brand-primary">التعلم</span></>
                 }
-                description="تابع رحلتك التعليمية وراقب تقدمك في المهارات الزراعية الحديثة."
+                description="تابع رحلتك التعليمية وراقب تقدمك في المهارات والعلوم الحديثة."
                 actions={
                     <div className="flex items-center gap-4 bg-white p-2 rounded-3xl border border-border-subtle shadow-xl shadow-slate-200/50">
                         <div className="flex -space-x-3 rtl:space-x-reverse p-2">
@@ -109,7 +109,7 @@ export const MyCourses = () => {
                                 <GraduationCap className="w-12 h-12 text-slate-200" />
                             </div>
                             <h3 className="text-3xl font-black text-text-primary mb-4">لا يوجد دورات حالياً</h3>
-                            <p className="text-text-secondary font-bold text-lg max-w-sm mx-auto leading-relaxed mb-10">ابدأ الآن رحلتك في تعلم التقنيات الزراعية الحديثة مع نخبة من الخبراء في المجال.</p>
+                            <p className="text-text-secondary font-bold text-lg max-w-sm mx-auto leading-relaxed mb-10">ابدأ الآن رحلتك في تعلم التقنيات والمهارات الحديثة مع نخبة من الخبراء في المجال.</p>
                             <Link 
                                 to="/courses" 
                                 className="inline-flex items-center gap-3 px-10 py-4 bg-brand-primary text-white rounded-2xl font-black shadow-xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all"
@@ -142,11 +142,11 @@ export const MyCourses = () => {
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                                         />
                                     ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-brand-primary/20 to-brand-primary/5 flex items-center justify-center">
+                                        <div className="w-full h-full bg-brand-primary/15 flex items-center justify-center">
                                             <BookOpen className="w-12 h-12 text-brand-primary/30" />
                                         </div>
                                     )}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                                    <div className="absolute inset-0 bg-slate-900/50 opacity-60 group-hover:opacity-40 transition-opacity" />
                                     
                                     <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full shadow-lg border border-white/50">
                                         <div className="flex items-center gap-2">
@@ -189,7 +189,7 @@ export const MyCourses = () => {
                                                 transition={{ duration: 1, delay: 0.5 }}
                                                 className="h-full bg-brand-primary rounded-full relative overflow-hidden"
                                             >
-                                                <div className="absolute inset-0 bg-white/30 w-full h-full animate-[shimmer_2s_infinite]" style={{ backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+                                                <div className="absolute inset-0 bg-white/20 w-full h-full animate-pulse" />
                                             </motion.div>
                                         </div>
                                     </div>

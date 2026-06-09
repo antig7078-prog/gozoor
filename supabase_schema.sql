@@ -946,6 +946,236 @@ CREATE TRIGGER trg_update_conversation_time
     FOR EACH ROW
     EXECUTE FUNCTION public.update_conversation_last_message();
 
+-- ==========================================
+-- 8. نظام الإشعارات والتنبيهات (NOTIFICATIONS SYSTEM)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS public.notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('info', 'success', 'warning', 'message', 'order', 'application')),
+    link TEXT,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- تفعيل الحماية لجدول الإشعارات
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+-- سياسة الأمان: يمكن للمستخدمين إدارة إشعاراتهم الخاصة فقط
+CREATE POLICY "Users can manage own notifications" ON public.notifications
+    FOR ALL USING (auth.uid() = user_id);
+
+-- دالة لإرسال إشعار تلقائي عند استلام رسالة جديدة
+CREATE OR REPLACE FUNCTION public.notify_on_new_message()
+RETURNS TRIGGER AS $$
+DECLARE
+    recipient_id UUID;
+    sender_name TEXT;
+BEGIN
+    -- جلب الطرف الآخر للمحادثة
+    SELECT CASE 
+        WHEN participant_1 = NEW.sender_id THEN participant_2
+        ELSE participant_1
+    END INTO recipient_id
+    FROM public.conversations
+    WHERE id = NEW.conversation_id;
+
+    -- جلب اسم المرسل
+    SELECT full_name INTO sender_name
+    FROM public.profiles
+    WHERE id = NEW.sender_id;
+
+    IF recipient_id IS NOT NULL THEN
+        INSERT INTO public.notifications (user_id, title, content, type, link)
+        VALUES (
+            recipient_id,
+            'رسالة جديدة',
+            'لقد أرسل لك ' || COALESCE(sender_name, 'أحد الأعضاء') || ' رسالة جديدة.',
+            'message',
+            '/messages?conversationId=' || NEW.conversation_id
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_notify_on_new_message ON public.messages;
+CREATE TRIGGER trg_notify_on_new_message
+    AFTER INSERT ON public.messages
+    FOR EACH ROW
+    EXECUTE FUNCTION public.notify_on_new_message();
+
+-- دالة لإرسال إشعار تلقائي عند تقديم طلب توظيف جديد
+CREATE OR REPLACE FUNCTION public.notify_on_new_job_application()
+RETURNS TRIGGER AS $$
+DECLARE
+    job_owner_id UUID;
+    job_title TEXT;
+    applicant_name TEXT;
+BEGIN
+    SELECT employer_id, title INTO job_owner_id, job_title
+    FROM public.jobs
+    WHERE id = NEW.job_id;
+
+    SELECT full_name INTO applicant_name
+    FROM public.profiles
+    WHERE id = NEW.applicant_id;
+
+    IF job_owner_id IS NOT NULL THEN
+        INSERT INTO public.notifications (user_id, title, content, type, link)
+        VALUES (
+            job_owner_id,
+            'طلب توظيف جديد',
+            'تم تقديم طلب جديد من قبل ' || COALESCE(applicant_name, 'أحد المتقدمين') || ' لوظيفتك المعلنة "' || job_title || '".',
+            'application',
+            '/my-jobs'
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_notify_on_new_job_application ON public.job_applications;
+CREATE TRIGGER trg_notify_on_new_job_application
+    AFTER INSERT ON public.job_applications
+    FOR EACH ROW
+    EXECUTE FUNCTION public.notify_on_new_job_application();
+
+-- دالة لإرسال إشعار تلقائي عند طلب خدمة جديد
+CREATE OR REPLACE FUNCTION public.notify_on_new_service_order()
+RETURNS TRIGGER AS $$
+DECLARE
+    client_name TEXT;
+BEGIN
+    SELECT full_name INTO client_name
+    FROM public.profiles
+    WHERE id = NEW.client_id;
+
+    INSERT INTO public.notifications (user_id, title, content, type, link)
+    VALUES (
+        NEW.freelancer_id,
+        'طلب خدمة جديد',
+        'لقد تلقيت طلباً جديداً من ' || COALESCE(client_name, 'أحد العملاء') || ' لباقة "' || NEW.package_name || '".',
+        'order',
+        '/service-orders/' || NEW.id
+    );
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_notify_on_new_service_order ON public.service_orders;
+CREATE TRIGGER trg_notify_on_new_service_order
+    AFTER INSERT ON public.service_orders
+    FOR EACH ROW
+    EXECUTE FUNCTION public.notify_on_new_service_order();
+
+-- دالة لإرسال إشعار عند تغيير حالة طلب الخدمة
+CREATE OR REPLACE FUNCTION public.notify_on_service_order_status_change()
+RETURNS TRIGGER AS $$
+DECLARE
+    freelancer_name TEXT;
+    client_name TEXT;
+BEGIN
+    IF OLD.status IS DISTINCT FROM NEW.status THEN
+        -- عند تسليم الخدمة، إخطار العميل
+        IF NEW.status = 'delivered' THEN
+            SELECT full_name INTO freelancer_name FROM public.profiles WHERE id = NEW.freelancer_id;
+            INSERT INTO public.notifications (user_id, title, content, type, link)
+            VALUES (
+                NEW.client_id,
+                'تم تسليم الخدمة',
+                'قام مقدم الخدمة ' || COALESCE(freelancer_name, '') || ' بتسليم طلبك. يرجى مراجعته وقبوله.',
+                'order',
+                '/service-orders/' || NEW.id
+            );
+        -- عند قبول التسليم، إخطار مقدم الخدمة
+        ELSIF NEW.status = 'completed' OR NEW.status = 'accepted' THEN
+            SELECT full_name INTO client_name FROM public.profiles WHERE id = NEW.client_id;
+            INSERT INTO public.notifications (user_id, title, content, type, link)
+            VALUES (
+                NEW.freelancer_id,
+                'تم قبول تسليم الخدمة',
+                'قام العميل ' || COALESCE(client_name, '') || ' بقبول تسليم طلبك بنجاح.',
+                'success',
+                '/service-orders/' || NEW.id
+            );
+        -- عند الإلغاء، إخطار الطرفين
+        ELSIF NEW.status = 'cancelled' THEN
+            INSERT INTO public.notifications (user_id, title, content, type, link)
+            VALUES (
+                NEW.client_id,
+                'تم إلغاء طلب الخدمة',
+                'تم إلغاء طلب الخدمة رقم #' || substring(NEW.id::text, 1, 8),
+                'warning',
+                '/service-orders/' || NEW.id
+            );
+            INSERT INTO public.notifications (user_id, title, content, type, link)
+            VALUES (
+                NEW.freelancer_id,
+                'تم إلغاء طلب الخدمة',
+                'تم إلغاء طلب الخدمة رقم #' || substring(NEW.id::text, 1, 8),
+                'warning',
+                '/service-orders/' || NEW.id
+            );
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_notify_on_service_order_status_change ON public.service_orders;
+CREATE TRIGGER trg_notify_on_service_order_status_change
+    AFTER UPDATE ON public.service_orders
+    FOR EACH ROW
+    EXECUTE FUNCTION public.notify_on_service_order_status_change();
+
+-- دالة لإرسال إشعار تلقائي عند طلب شراء جديد في المتجر
+CREATE OR REPLACE FUNCTION public.notify_on_new_order_item()
+RETURNS TRIGGER AS $$
+DECLARE
+    product_seller_id UUID;
+    product_title TEXT;
+    buyer_name TEXT;
+    order_buyer_id UUID;
+BEGIN
+    SELECT seller_id, title INTO product_seller_id, product_title
+    FROM public.products
+    WHERE id = NEW.product_id;
+
+    SELECT buyer_id INTO order_buyer_id
+    FROM public.orders
+    WHERE id = NEW.order_id;
+
+    SELECT full_name INTO buyer_name
+    FROM public.profiles
+    WHERE id = order_buyer_id;
+
+    IF product_seller_id IS NOT NULL AND product_seller_id <> order_buyer_id THEN
+        INSERT INTO public.notifications (user_id, title, content, type, link)
+        VALUES (
+            product_seller_id,
+            'طلب شراء جديد',
+            'لقد تلقيت طلب شراء لمنتجك "' || product_title || '" من قبل ' || COALESCE(buyer_name, 'أحد المشترين') || ' (الكمية: ' || NEW.quantity || ').',
+            'order',
+            '/customer-orders'
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_notify_on_new_order_item ON public.order_items;
+CREATE TRIGGER trg_notify_on_new_order_item
+    AFTER INSERT ON public.order_items
+    FOR EACH ROW
+    EXECUTE FUNCTION public.notify_on_new_order_item();
+
 -- 1. منح الصلاحيات الكاملة للأدوار الافتراضية على جميع الجداول والدوال الحالية في قاعدة البيانات
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, authenticated, anon, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, authenticated, anon, service_role;
@@ -955,3 +1185,4 @@ GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, authenticated, anon, se
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, authenticated, anon, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, authenticated, anon, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, authenticated, anon, service_role;
+

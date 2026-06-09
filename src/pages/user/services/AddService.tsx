@@ -46,7 +46,7 @@ export const AddService = () => {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        category: 'استشارات زراعية',
+        category: 'استشارات مهنية',
         image_url: '',
         // Basic Package
         basic_desc: '',
@@ -66,11 +66,11 @@ export const AddService = () => {
     });
 
     const categories = [
-        'استشارات زراعية',
+        'استشارات مهنية',
         'خدمات تقنية وبرمجة',
-        'تسويق زراعي ومبيعات',
+        'تسويق ومبيعات',
         'تصميم وصناعة محتوى',
-        'إدارة مزارع ومشاريع',
+        'إدارة مشاريع وأعمال',
         'أخرى'
     ];
 
@@ -228,7 +228,7 @@ export const AddService = () => {
                                         value={formData.title}
                                         onChange={handleChange}
                                         className="w-full px-6 py-4 bg-surface-primary border border-border-subtle rounded-2xl focus:bg-white focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary outline-none transition-all font-bold text-text-primary placeholder:text-slate-300"
-                                        placeholder="مثال: تقديم استشارة زراعية متكاملة لتحسين إنتاجية المحاصيل"
+                                        placeholder="مثال: تقديم استشارة مهنية متكاملة لتحسين وتطوير الأعمال"
                                     />
                                 </div>
 

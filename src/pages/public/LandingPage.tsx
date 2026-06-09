@@ -90,7 +90,7 @@ export const LandingPage = () => {
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled || isMenuOpen ? 'bg-brand-bg/90 backdrop-blur-2xl shadow-lg shadow-black/40 py-4 border-b border-white/5' : 'bg-transparent py-6'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
-                        <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-gradient-to-tr from-brand-primary to-brand-accent rounded-xl sm:rounded-2xl shadow-lg shadow-brand-primary/20 transform group-hover:rotate-12 transition-all duration-300">
+                        <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-brand-primary rounded-xl sm:rounded-2xl shadow-lg shadow-brand-primary/20 transform group-hover:rotate-12 transition-all duration-300">
                             <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-white relative z-10" />
                             <div className="absolute inset-0 bg-white/20 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
@@ -194,7 +194,7 @@ export const LandingPage = () => {
                 {/* Premium Animated Background Layer */}
                 <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
                     <div className="absolute bottom-[-10%] left-[-5%] w-[20rem] sm:w-[40rem] h-[20rem] sm:h-[40rem] bg-brand-primary/20 rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] opacity-50 animate-pulse" />
-                    <div className="absolute top-[10%] right-[-10%] w-[15rem] sm:w-[35rem] h-[15rem] sm:h-[35rem] bg-lime-600/10 rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] opacity-40 animate-pulse" style={{ animationDelay: '2s' }} />
+                    <div className="absolute top-[10%] right-[-10%] w-[15rem] sm:w-[35rem] h-[15rem] sm:h-[35rem] bg-brand-accent/10 rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] opacity-40 animate-pulse" style={{ animationDelay: '2s' }} />
                     <div className="absolute inset-0 bg-[url('/assets/images/stardust.png')] opacity-[0.03] mix-blend-overlay"></div>
                 </div>
 
@@ -217,7 +217,7 @@ export const LandingPage = () => {
 
                         <motion.h1 variants={fadeUp} className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight leading-[1.2] lg:leading-[1.1] mb-6 sm:mb-8">
                             المنظومة <br className="hidden sm:block" />
-                            الزراعية <span className="text-transparent bg-clip-text bg-gradient-to-l from-brand-primary to-brand-accent">المتكاملة</span>.
+                            الزراعية <span className="text-brand-accent">المتكاملة</span>.
                         </motion.h1>
 
                         <motion.p variants={fadeUp} className="text-base sm:text-lg lg:text-xl text-brand-primary-light/70 font-medium leading-relaxed mb-8 sm:mb-12 max-w-lg mx-auto lg:mx-0">
@@ -271,7 +271,7 @@ export const LandingPage = () => {
                         </motion.div>
 
                         <motion.div animate={{ y: [0, -15, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-16 w-64 bg-brand-bg/95 backdrop-blur-2xl rounded-card p-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-brand-primary/20 z-40">
-                            <div className="absolute inset-0 bg-gradient-to-b from-brand-primary/10 to-transparent rounded-card pointer-events-none" />
+                            <div className="absolute inset-0 bg-brand-primary/5 rounded-card pointer-events-none" />
                             <div className="flex items-start justify-between mb-5 relative z-10">
                                 <div className="w-12 h-12 bg-brand-primary/20 rounded-2xl flex items-center justify-center border border-brand-primary/20">
                                     <Briefcase className="w-6 h-6 text-brand-primary" />
@@ -301,10 +301,10 @@ export const LandingPage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(250px,auto)]">
                         {/* Large Bento Box - Education / الطلاب والخريجين */}
-                        <Link to="/courses" className="md:col-span-2 md:row-span-2 group relative rounded-card overflow-hidden p-6 sm:p-10 md:p-12 flex flex-col justify-end shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_50px_rgba(16,185,129,0.15)] transition-all duration-500 border border-white/[0.08] min-h-[400px] md:min-h-0">
+                        <Link to="/courses" className="md:col-span-2 md:row-span-2 group relative rounded-card overflow-hidden p-6 sm:p-10 md:p-12 flex flex-col justify-end shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_50px_rgba(29,122,133,0.15)] transition-all duration-500 border border-white/[0.08] min-h-[400px] md:min-h-0">
                             <div className="absolute inset-0 bg-brand-bg"></div>
                             <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-105 group-hover:opacity-40 transition-all duration-700" style={{ backgroundImage: `url(${academyBanner})` }}></div>
-                            <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-brand-bg/80 to-transparent"></div>
+                            <div className="absolute inset-0 bg-brand-bg/80"></div>
 
                             <div className="relative z-10">
                                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-brand-primary mb-4 sm:mb-6 border border-white/20 group-hover:-translate-y-2 transition-transform duration-300">
@@ -319,10 +319,10 @@ export const LandingPage = () => {
                         </Link>
 
                         {/* المجتمع الزراعي */}
-                        <Link to="/community" className="md:col-span-1 md:row-span-1 group bg-gradient-to-br from-emerald-900/40 to-brand-bg/40 backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:border-emerald-500/30 transition-all duration-500 hover:-translate-y-1">
-                            <div className="absolute top-[-20%] left-[-20%] w-[150%] h-[150%] bg-emerald-500/5 rotate-12 blur-2xl group-hover:rotate-45 transition-all duration-700 pointer-events-none"></div>
+                        <Link to="/community" className="md:col-span-1 md:row-span-1 group bg-brand-primary/15 backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:border-brand-primary/30 transition-all duration-500 hover:-translate-y-1">
+                            <div className="absolute top-[-20%] left-[-20%] w-[150%] h-[150%] bg-brand-primary/5 rotate-12 blur-2xl group-hover:rotate-45 transition-all duration-700 pointer-events-none"></div>
                             <div className="relative z-10 flex flex-col h-full">
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-emerald-400 mb-auto border border-emerald-500/20 shadow-inner group-hover:scale-110 transition-transform">
+                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-brand-primary/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-brand-accent mb-auto border border-brand-primary/20 shadow-inner group-hover:scale-110 transition-transform">
                                     <Users className="w-6 h-6 sm:w-7 sm:h-7" />
                                 </div>
                                 <div className="mt-6 sm:mt-8">
@@ -349,11 +349,11 @@ export const LandingPage = () => {
                         </Link>
 
                         {/* المتجر - Full Width */}
-                        <Link to="/marketplace" className="md:col-span-3 md:row-span-1 group bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 md:p-12 flex flex-col lg:flex-row items-center gap-8 sm:gap-10 hover:bg-white/[0.05] hover:shadow-[0_0_50px_rgba(16,185,129,0.15)] hover:border-brand-primary/20 transition-all duration-500 overflow-hidden relative">
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                        <Link to="/marketplace" className="md:col-span-3 md:row-span-1 group bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-card p-6 sm:p-8 md:p-12 flex flex-col lg:flex-row items-center gap-8 sm:gap-10 hover:bg-white/[0.05] hover:shadow-[0_0_50px_rgba(29,122,133,0.15)] hover:border-brand-primary/20 transition-all duration-500 overflow-hidden relative">
+                            <div className="absolute inset-0 bg-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                             <div className="w-full lg:w-2/5 h-48 sm:h-64 lg:h-full bg-black/40 rounded-3xl overflow-hidden shrink-0 relative shadow-inner border border-white/5">
                                 <img src={freelanceServices} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100" alt="سوق المزارعين" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-brand-bg/80 to-transparent"></div>
+                                <div className="absolute inset-0 bg-brand-bg/70"></div>
                             </div>
                             <div className="flex-1 text-center lg:text-right relative z-10">
                                 <div className="mb-4 sm:mb-6 flex justify-center lg:justify-start">
@@ -388,7 +388,7 @@ export const LandingPage = () => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
-                                className="bg-white/[0.02] backdrop-blur-2xl border border-white/[0.05] p-6 sm:p-8 rounded-card hover:bg-white/[0.04] hover:border-brand-primary/30 hover:shadow-[0_0_30px_rgba(16,185,129,0.1)] transition-all duration-300 group"
+                                className="bg-white/[0.02] backdrop-blur-2xl border border-white/[0.05] p-6 sm:p-8 rounded-card hover:bg-white/[0.04] hover:border-brand-primary/30 hover:shadow-[0_0_30px_rgba(29,122,133,0.1)] transition-all duration-300 group"
                             >
                                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 group-hover:bg-brand-primary/20 group-hover:border-brand-primary/30 transition-all">
                                     <stat.icon className="w-6 h-6 sm:w-8 sm:h-8 text-brand-primary" />
@@ -421,7 +421,7 @@ export const LandingPage = () => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: index * 0.1 }}
-                                className="group bg-white/[0.03] backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_40px_rgba(16,185,129,0.15)] hover:bg-white/[0.05] transition-all duration-500 flex flex-col items-center text-center border border-white/[0.08]"
+                                className="group bg-white/[0.03] backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_40px_rgba(29,122,133,0.15)] hover:bg-white/[0.05] transition-all duration-500 flex flex-col items-center text-center border border-white/[0.08]"
                             >
                                 <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden mb-4 sm:mb-6 border-4 border-white/10 p-1 relative group-hover:border-brand-primary/50 transition-colors">
                                     <img src={member.image} alt={member.name} loading="lazy" className="w-full h-full object-cover rounded-full filter grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500" />
@@ -438,7 +438,7 @@ export const LandingPage = () => {
                 <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-primary/10 rounded-l-full blur-3xl -z-10 opacity-70"></div>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
                     <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/[0.08] rounded-[2rem] sm:rounded-[3.5rem] p-8 sm:p-12 md:p-20 relative overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-brand-primary/20 to-brand-accent/20 blur-[100px] pointer-events-none rounded-full"></div>
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-primary/20 blur-[100px] pointer-events-none rounded-full"></div>
                         <Quote className="absolute text-white/[0.03] w-32 h-32 sm:w-64 sm:h-64 -top-5 sm:-top-10 -right-5 sm:-right-10 rotate-180" />
 
                         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 items-center">
@@ -474,7 +474,7 @@ export const LandingPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-16">
                         <div className="lg:col-span-2 text-center sm:text-right">
                             <Link to="/" className="flex items-center justify-center sm:justify-start gap-3 mb-6 sm:mb-8 group">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-brand-primary-hover to-brand-accent rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-all duration-300">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-brand-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-all duration-300">
                                     <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                                 </div>
                                 <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">جذور</span>

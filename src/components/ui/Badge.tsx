@@ -20,7 +20,7 @@ export const Badge = ({
     warning: 'bg-amber-100 text-amber-600 border-amber-200',
     danger: 'bg-red-100 text-red-600 border-red-200',
     info: 'bg-blue-100 text-blue-600 border-blue-200',
-    premium: 'bg-gradient-to-tr from-brand-primary/20 to-brand-accent/20 text-brand-primary border-brand-primary/30'
+    premium: 'bg-brand-accent/20 text-brand-primary border-brand-accent/30'
   };
 
   const sizes = {

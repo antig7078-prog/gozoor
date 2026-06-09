@@ -293,7 +293,7 @@ return (
                                     loading="lazy"
                                     className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div className="absolute inset-0 bg-black/50"></div>
                             </div>
                             <h4 className="text-xl font-black text-text-primary leading-tight px-2">{course.title}</h4>
                         </div>

@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import type { Conversation, Message } from '../../types';
 import { messagingService } from '../../services/messagingService';
+import { notificationService } from '../../services/notificationService';
 import { MessageBubble } from './MessageBubble';
-import { Send, User, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
+import { Send, User, ChevronRight, AlertCircle, RefreshCw, ShoppingBag, Briefcase, Settings, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface ConversationViewProps {
@@ -84,7 +85,12 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             sender_profile: senderProfile || undefined,
           };
 
-          setMessages((prev) => [...prev, messageWithProfile]);
+          // Append only if it doesn't already exist in state
+          setMessages((prev) => {
+            const exists = prev.some((m) => m.id === messageWithProfile.id);
+            if (exists) return prev;
+            return [...prev, messageWithProfile];
+          });
 
           // Mark as read if user is viewing
           if (payload.new.sender_id !== currentUserId) {
@@ -117,6 +123,36 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
       if (sendError) {
         setError(sendError);
         setNewMessage(content); // Restore input on error
+      } else if (data) {
+        // Fetch current user's profile info to attach to local message representation
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUserId)
+          .single();
+
+        const messageWithProfile: Message = {
+          ...data,
+          sender_profile: userProfile || undefined,
+        };
+
+        // Append to state manually to ensure instant, reliable delivery feedback
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === messageWithProfile.id);
+          if (exists) return prev;
+          return [...prev, messageWithProfile];
+        });
+
+        // Send a notification to the recipient of the message
+        if (otherUser?.id) {
+          notificationService.sendNotification({
+            userId: otherUser.id,
+            title: 'رسالة جديدة',
+            content: `لقد أرسل لك ${userProfile?.full_name || 'أحد الأعضاء'} رسالة جديدة: "${content.slice(0, 40)}${content.length > 40 ? '...' : ''}"`,
+            type: 'message',
+            link: `/messages?conversationId=${conversationId}`
+          }).catch(err => console.error('Error sending message notification:', err));
+        }
       }
     } catch (err) {
       setError('تعذر إرسال الرسالة. يرجى التحقق من اتصالك بالإنترنت.');
@@ -132,18 +168,46 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
     return conv.participant_1_profile;
   };
 
+  const getReputationText = (level?: string) => {
+    switch (level) {
+      case 'expert':
+        return 'خبير';
+      case 'trusted':
+        return 'موثوق';
+      case 'professional':
+        return 'محترف';
+      case 'active':
+        return 'نشط';
+      default:
+        return 'مبتدئ';
+    }
+  };
+
+  const getContextLabel = (type?: string) => {
+    switch (type) {
+      case 'job':
+        return 'وظيفة';
+      case 'product':
+        return 'منتج';
+      case 'service':
+        return 'خدمة';
+      default:
+        return 'موضوع عام';
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col justify-center items-center h-full bg-slate-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mb-2"></div>
-        <span className="text-slate-450 text-xs font-bold">جاري تحميل المحادثة...</span>
+      <div className="flex-1 flex flex-col justify-center items-center h-full bg-slate-50/50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mb-3"></div>
+        <span className="text-slate-400 text-xs font-bold">جاري تحميل المحادثة...</span>
       </div>
     );
   }
 
   if (error && !conversation) {
     return (
-      <div className="flex-1 flex flex-col justify-center items-center h-full p-6 text-center bg-slate-50" dir="rtl">
+      <div className="flex-1 flex flex-col justify-center items-center h-full p-6 text-center bg-slate-50/50" dir="rtl">
         <AlertCircle className="w-12 h-12 text-red-500 mb-2" />
         <p className="text-slate-800 font-bold mb-4">{error}</p>
         <button
@@ -164,9 +228,9 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
   const otherUser = conversation ? getOtherParticipant(conversation) : null;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden" dir="rtl">
+    <div className="flex-1 flex flex-col h-full bg-slate-50/40 overflow-hidden" dir="rtl">
       {/* Header bar */}
-      <div className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between shadow-sm shrink-0">
+      <div className="bg-white px-5 py-4 border-b border-slate-100 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           {onBack && (
             <button
@@ -182,52 +246,52 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             <img
               src={otherUser.avatar_url}
               alt={otherUser.full_name || 'مستلم الرسالة'}
-              className="w-10 h-10 rounded-2xl object-cover border border-slate-100"
+              className="w-11 h-11 rounded-xl object-cover border border-slate-150"
             />
           ) : (
-            <div className="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+            <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
               <User className="w-5 h-5" />
             </div>
           )}
 
           <div>
-            <h2 className="font-bold text-slate-800 text-sm leading-tight">
-              {otherUser?.full_name || 'مستخدم مجهول'}
+            <h2 className="font-black text-slate-800 text-sm sm:text-base leading-tight">
+              {otherUser?.full_name || 'مستخدم معتمد'}
             </h2>
-            {otherUser?.reputation_level && (
-              <span className="text-[10px] text-slate-450 font-medium">
-                مستوى السمعة:{' '}
-                {otherUser.reputation_level === 'expert'
-                  ? 'خبير'
-                  : otherUser.reputation_level === 'trusted'
-                  ? 'موثوق'
-                  : otherUser.reputation_level === 'professional'
-                  ? 'محترف'
-                  : otherUser.reputation_level === 'active'
-                  ? 'نشط'
-                  : 'مبتدئ'}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black">
+                {getReputationText(otherUser?.reputation_level)}
               </span>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Conversation Context Title */}
+        {/* Conversation Context Title (High Contrast) */}
         {conversation?.context_title && (
-          <div className="hidden sm:block text-left">
-            <span className="text-[10px] text-slate-400 font-bold block">موضوع المراسلة:</span>
-            <span className="text-xs font-black text-slate-700 bg-slate-100 border border-slate-200 rounded-lg px-2 py-0.5 max-w-[200px] truncate block">
-              {conversation.context_title}
-            </span>
+          <div className="text-left">
+            <span className="text-[9px] text-slate-400 font-black block tracking-widest uppercase">بخصوص</span>
+            <div className="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl px-3 py-1 mt-0.5 max-w-[180px] sm:max-w-[280px] truncate">
+              {conversation.context_type === 'product' && <ShoppingBag className="w-3.5 h-3.5" />}
+              {conversation.context_type === 'job' && <Briefcase className="w-3.5 h-3.5" />}
+              {conversation.context_type === 'service' && <Settings className="w-3.5 h-3.5" />}
+              {conversation.context_type !== 'product' && conversation.context_type !== 'job' && conversation.context_type !== 'service' && <MessageSquare className="w-3.5 h-3.5" />}
+              <span className="text-xs font-black truncate">
+                {getContextLabel(conversation.context_type)}: {conversation.context_title}
+              </span>
+            </div>
           </div>
         )}
       </div>
 
       {/* Messages Panel */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 custom-scrollbar bg-slate-50/50">
+      <div className="flex-1 overflow-y-auto px-5 py-6 space-y-5 custom-scrollbar bg-slate-50/20">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-slate-400 max-w-sm mx-auto">
-            <p className="font-bold mb-1">ابدأ المحادثة الآن</p>
-            <p className="text-xs">كن مبادراً وأرسل رسالة ترحيبية لبدء التفاوض أو الاستفسار.</p>
+          <div className="flex flex-col items-center justify-center h-full text-center text-slate-400 max-w-sm mx-auto p-4">
+            <div className="w-12 h-12 rounded-full bg-slate-100/80 border border-slate-200/50 flex items-center justify-center mb-3">
+              <MessageSquare className="w-5 h-5 text-slate-350" />
+            </div>
+            <p className="font-black text-sm text-slate-700 mb-1">ابدأ المحادثة الآن</p>
+            <p className="text-xs font-semibold text-slate-400 leading-relaxed">كن مبادراً وأرسل رسالة ترحيبية لبدء التفاوض أو الاستفسار.</p>
           </div>
         ) : (
           messages.map((message) => (
@@ -242,21 +306,21 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
       </div>
 
       {/* Footer message editor */}
-      <div className="bg-white border-t border-slate-200 p-4 shrink-0">
+      <div className="bg-white border-t border-slate-100 p-4 shrink-0 shadow-inner">
         <form onSubmit={handleSend} className="flex gap-3 items-center">
           <input
             type="text"
-            placeholder="اكتب رسالتك هنا..."
+            placeholder="اكتب رسالتك وتفاصيل استفسارك هنا..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             disabled={sending}
-            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary placeholder-slate-400 text-sm text-slate-800 bg-slate-50/50 transition-all"
+            className="flex-1 px-4 py-3 bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary placeholder-slate-400 text-sm font-semibold text-slate-800 transition-all outline-none"
           />
 
           <button
             type="submit"
             disabled={!newMessage.trim() || sending}
-            className="px-4 py-3 bg-brand-primary hover:bg-brand-primary-hover disabled:bg-slate-200 disabled:text-slate-450 text-white rounded-2xl shadow-md shadow-brand-primary/10 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0"
+            className="p-3.5 bg-brand-primary hover:bg-brand-primary-hover disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl shadow-md shadow-brand-primary/10 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0"
             aria-label="إرسال"
           >
             <Send className="w-5 h-5 rotate-180" />

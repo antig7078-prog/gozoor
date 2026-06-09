@@ -137,7 +137,7 @@ export const AdminLayout = () => {
             >
                 <div className="p-6 flex items-center justify-between border-b border-brand-primary/10">
                     <div className="flex items-center gap-3">
-                        <div className="relative w-12 h-12 flex items-center justify-center bg-gradient-to-tr from-brand-primary-hover to-brand-accent rounded-2xl shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-all duration-300">
+                        <div className="relative w-12 h-12 flex items-center justify-center bg-brand-primary rounded-2xl shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-all duration-300">
                             <Leaf className="w-6 h-6 text-white relative z-10" />
                         </div>
                         <div>

@@ -67,7 +67,7 @@ export const UserDashboard = () => {
     const tabs = [
         { id: 'stats', label: 'احصائياتك', icon: LayoutDashboard },
         { id: 'alumni', label: 'الطلاب والخرجين', icon: GraduationCap },
-        { id: 'community', label: 'المجتمع الزراعي', icon: Users },
+        { id: 'community', label: 'المجتمع', icon: Users },
         { id: 'market', label: 'السوق', icon: ShoppingBag },
         { id: 'jobs', label: 'الوظائف والعمل الحر', icon: Briefcase },
     ];
@@ -119,20 +119,20 @@ export const UserDashboard = () => {
                                 <div className="space-y-4 max-w-2xl">
                                     <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-[10px] font-black tracking-widest uppercase text-brand-primary-light">
                                         <Sparkles className="w-3 h-3" />
-                                        بوابتك للتميز الزراعي
+                                        بوابتك للتميز المهني
                                     </div>
                                     <h1 className="text-3xl md:text-5xl font-black leading-tight">
                                         أهلاً بك، {profileName || user?.email?.split('@')[0] || 'طالبنا العزيز'}! <span className="inline-block animate-bounce">👋</span>
                                     </h1>
                                     <p className="text-slate-200 text-lg md:text-xl font-bold opacity-80 leading-relaxed">
-                                        مستعد لمواصلة رحلة التعلم واكتساب مهارات زراعية جديدة؟ نحن هنا لندعم طموحك.
+                                        مستعد لمواصلة رحلة التعلم واكتساب مهارات جديدة؟ نحن هنا لندعم طموحك.
                                     </p>
                                 </div>
                                 <Link to="/courses">
                                     <Button
                                         variant="premium"
                                         size="lg"
-                                        className="bg-white text-brand-bg hover:bg-slate-100"
+                                        className="bg-brand-accent text-white hover:bg-brand-accent/90 shadow-lg shadow-brand-accent/30"
                                         icon={ChevronLeft}
                                         iconPosition="right"
                                     >
@@ -182,7 +182,7 @@ export const UserDashboard = () => {
                                                 <BookOpen className="w-10 h-10 text-slate-300" />
                                             </div>
                                             <h3 className="text-2xl font-black text-text-primary mb-2">ابدأ رحلتك المعرفية</h3>
-                                            <p className="text-text-secondary font-bold mb-8 max-w-sm mx-auto">تصفح مجموعة واسعة من الدورات الزراعية المتخصصة وابدأ التعلم الآن.</p>
+                                            <p className="text-text-secondary font-bold mb-8 max-w-sm mx-auto">تصفح مجموعة واسعة من الدورات المتخصصة وابدأ التعلم الآن.</p>
                                             <Link to="/courses">
                                                 <Button variant="primary" size="lg" icon={BookOpen}>
                                                     تصفح الدورات
@@ -204,7 +204,7 @@ export const UserDashboard = () => {
                                                                 <BookOpen className="w-12 h-12" />
                                                             </div>
                                                         )}
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
+                                                        <div className="absolute inset-0 bg-slate-900/40" />
                                                         <div className="absolute bottom-4 right-4">
                                                             <Badge variant="primary" size="sm">نشط</Badge>
                                                         </div>

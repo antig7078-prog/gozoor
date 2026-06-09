@@ -100,7 +100,7 @@ export const AddProduct = () => {
                     <>
                         <PageHeader
                             title="إضافة منتج جديد"
-                            description="قم بإضافة منتجك الجديد إلى سوق جذور وشاركه مع المجتمع الزراعي."
+                            description="قم بإضافة منتجك الجديد إلى سوق جذور وشاركه مع المجتمع."
                             icon={Store}
                             actions={
                                 <div className="w-full sm:w-auto">

@@ -142,7 +142,7 @@ export const PublicProfile = () => {
         {/* Hero Profile Card */}
         <div className="relative bg-white rounded-[2rem] border border-border-subtle shadow-2xl shadow-slate-200/50 overflow-hidden">
           {/* Banner */}
-          <div className="h-36 sm:h-48 bg-gradient-to-br from-brand-primary via-brand-primary/80 to-emerald-400 relative">
+          <div className="h-36 sm:h-48 bg-brand-primary relative">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiLz48L3N2Zz4=')] opacity-50" />
           </div>
 

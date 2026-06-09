@@ -307,7 +307,7 @@ export const CommunityPage = () => {
         });
     };
 
-    if (loading) return <LoadingSpinner fullPage message="جاري تحميل المجتمع الزراعي..." />;
+    if (loading) return <LoadingSpinner fullPage message="جاري تحميل المجتمع..." />;
 
     return (
         <PageContainer maxWidth="lg">
@@ -318,8 +318,8 @@ export const CommunityPage = () => {
                         شارك خبرتك وتعلّم من الآخرين
                     </div>
                 }
-                title={<>المجتمع <span className="text-brand-primary">الزراعي</span></>}
-                description="مكانك لمشاركة الأفكار، طرح الأسئلة، والتواصل مع زملائك في المجال الزراعي."
+                title={<>مجتمع <span className="text-brand-primary">الطلاب والخبراء</span></>}
+                description="مكانك لمشاركة الأفكار، طرح الأسئلة، والتواصل مع زملائك في شتى المجالات والاهتمامات."
                 icon={Users}
             />
 
@@ -401,7 +401,7 @@ export const CommunityPage = () => {
                         <textarea
                             value={newPostContent}
                             onChange={(e) => setNewPostContent(e.target.value)}
-                            placeholder="شارك فكرة، سؤال، أو تجربة زراعية..."
+                            placeholder="شارك فكرة، سؤال، أو تجربة عمل..."
                             rows={3}
                             className="w-full resize-none bg-surface-primary border border-border-subtle rounded-2xl p-4 text-text-primary font-bold placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm sm:text-base"
                         />
@@ -476,7 +476,7 @@ export const CommunityPage = () => {
                                 {/* Post Header */}
                                 <div className="flex items-start justify-between mb-5">
                                     <div className="flex items-center gap-3 sm:gap-4">
-                                        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-brand-primary/20 to-brand-accent/20 flex items-center justify-center text-brand-primary font-black text-sm sm:text-lg border-2 border-brand-primary/10">
+                                        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-brand-primary/15 flex items-center justify-center text-brand-primary font-black text-sm sm:text-lg border-2 border-brand-primary/10">
                                             {post.user_name ? getInitials(post.user_name) : '؟'}
                                         </div>
                                         <div>

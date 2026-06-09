@@ -60,7 +60,7 @@ export const ServicesPage = () => {
         <PageContainer maxWidth="xl">
             <PageHeader
                 title="الخدمات الاحترافية"
-                description="استعن بنخبة من المتخصصين لإنجاز مهامك وتطوير أعمالك الزراعية والتقنية بكل سهولة وموثوقية."
+                description="استعن بنخبة من المتخصصين لإنجاز مهامك وتطوير أعمالك المهنية والتقنية بكل سهولة وموثوقية."
                 icon={MonitorPlay}
                 actions={
                     <Button
@@ -113,7 +113,7 @@ export const ServicesPage = () => {
                                                     alt={service.title}
                                                     className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                                                 />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                             </div>
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-slate-200">

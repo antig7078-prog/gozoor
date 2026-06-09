@@ -193,7 +193,7 @@ export const CreateJob = () => {
                     <div className="bg-white rounded-[2.5rem] border border-border-subtle shadow-xl shadow-slate-200/40 overflow-hidden">
                         
                         {/* Daily Limit Info Banner */}
-                        <div className="p-6 sm:p-8 border-b border-slate-50 bg-gradient-to-l from-brand-primary/5 to-transparent">
+                        <div className="p-6 sm:p-8 border-b border-slate-50 bg-brand-primary/5">
                             <div className="flex items-start gap-4">
                                 <div className="p-2.5 bg-brand-primary/10 rounded-xl shrink-0 text-brand-primary">
                                     <Info className="w-5 h-5" />

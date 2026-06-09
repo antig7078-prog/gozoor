@@ -52,7 +52,7 @@ export const ForgotPassword = () => {
             >
                 <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.08] rounded-[2.5rem] p-10 md:p-12 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden text-center">
 
-                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-brand-primary/50 to-transparent" />
+                    <div className="absolute top-0 inset-x-0 h-px bg-brand-primary/30" />
 
                     {/* Brand Section */}
                     <div className="flex flex-col items-center mb-10">
@@ -63,11 +63,11 @@ export const ForgotPassword = () => {
                             className="relative group"
                         >
                             <div className="absolute inset-0 bg-brand-primary blur-xl opacity-40 rounded-full"></div>
-                            <div className="relative bg-gradient-to-br from-brand-primary to-brand-accent p-5 rounded-[1.5rem] border border-brand-primary/30">
+                            <div className="relative bg-brand-primary p-5 rounded-[1.5rem] border border-brand-primary/30">
                                 <Leaf className="w-10 h-10 text-white" />
                             </div>
                         </motion.div>
-                        <h1 className="text-3xl font-black mt-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-brand-primary-light/70">
+                        <h1 className="text-3xl font-black mt-6 tracking-tight text-white">
                             استعادة الحساب
                         </h1>
                     </div>

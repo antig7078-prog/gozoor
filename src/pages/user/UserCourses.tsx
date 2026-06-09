@@ -120,7 +120,7 @@ export const UserCourses = () => {
                     title={
                         <>استكشف <span className="text-brand-primary">الدورات</span></>
                     }
-                    description="تعلم الزراعة الحديثة والتقنيات المتطورة من أفضل الخبراء في الوطن العربي."
+                    description="تعلم المهارات الحديثة والتقنيات المتطورة من أفضل الخبراء في الوطن العربي."
                     actions={
                         <div className="flex flex-wrap items-center justify-center lg:justify-end gap-6 sm:gap-8 lg:gap-12">
                             {[
@@ -273,7 +273,7 @@ export const UserCourses = () => {
                                                     {course.thumbnail_url ? (
                                                         <img src={course.thumbnail_url} alt={course.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" />
                                                     ) : (
-                                                        <div className="w-full h-full bg-gradient-to-br from-brand-primary/10 to-teal-100/50 flex items-center justify-center">
+                                                        <div className="w-full h-full bg-brand-primary/10 flex items-center justify-center">
                                                             <BookOpen className="w-16 h-16 text-brand-primary/30" />
                                                         </div>
                                                     )}
@@ -291,8 +291,8 @@ export const UserCourses = () => {
                                                         />
                                                     </button>
 
-                                                    {/* Sophisticated Gradient Overlay */}
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
+                                                    {/* Image Overlay */}
+                                                    <div className="absolute inset-0 bg-slate-900/60" />
 
                                                     {/* Top Right Badges */}
                                                     <div className="absolute top-4 right-4 flex flex-col gap-2">

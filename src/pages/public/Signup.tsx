@@ -76,7 +76,7 @@ export const Signup = () => {
                 <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.08] rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 md:p-12 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden">
 
                     {/* Inner Glow line on top */}
-                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-brand-primary/50 to-transparent" />
+                    <div className="absolute top-0 inset-x-0 h-px bg-brand-primary/30" />
 
                     {/* Header Section */}
                     <div className="flex flex-col items-center text-center mb-8 sm:mb-10">
@@ -90,11 +90,11 @@ export const Signup = () => {
                                 <UserPlus className="w-6 h-6 sm:w-8 sm:h-8 text-brand-primary" />
                             </div>
                         </motion.div>
-                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-brand-primary-light/70">
+                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                             انطلق مع جذور
                         </h1>
                         <p className="text-brand-primary-light/70 mt-3 font-medium text-sm leading-relaxed">
-                            أنشئ حسابك الآن وانضم لآلاف المستفيدين من أكبر منصة زراعية متكاملة في مصر.
+                            أنشئ حسابك الآن وانضم لآلاف المستفيدين من أكبر منصة تعليمية ومهنية متكاملة.
                         </p>
                     </div>
 

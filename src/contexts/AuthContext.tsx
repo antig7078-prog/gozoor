@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             {loading ? (
                 <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white">
                     <div className="relative mb-8">
-                        <div className="w-20 h-20 bg-gradient-to-tr from-brand-primary-hover to-brand-accent rounded-3xl shadow-2xl shadow-brand-primary/20 flex items-center justify-center animate-pulse">
+                        <div className="w-20 h-20 bg-brand-primary rounded-3xl shadow-2xl shadow-brand-primary/20 flex items-center justify-center animate-pulse">
                             <Leaf className="w-10 h-10 text-white" />
                         </div>
                         <div className="absolute -inset-4 border-2 border-brand-primary/10 rounded-[2rem] animate-[spin_4s_linear_infinite]"></div>

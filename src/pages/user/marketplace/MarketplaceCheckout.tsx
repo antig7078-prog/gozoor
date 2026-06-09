@@ -17,6 +17,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCartStore } from '../../../lib/store/cartStore';
 import { marketplaceService } from '../../../services/marketplaceService';
+import { notificationService } from '../../../services/notificationService';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -85,6 +86,28 @@ export const MarketplaceCheckout = () => {
             clearCart();
             setIsSuccess(true);
             toast.success('تم استلام طلبك بنجاح!');
+
+            // Send notifications to sellers
+            for (const item of items) {
+                if (item.seller_id && item.seller_id !== user.id) {
+                    notificationService.sendNotification({
+                        userId: item.seller_id,
+                        title: 'طلب شراء جديد',
+                        content: `لقد تلقيت طلب شراء لمنتجك "${item.title}" (الكمية: ${item.quantity}).`,
+                        type: 'order',
+                        link: '/customer-orders'
+                    }).catch(err => console.error('Error notifying seller:', err));
+                }
+            }
+
+            // Send notification to the buyer
+            notificationService.sendNotification({
+                userId: user.id,
+                title: 'تأكيد طلب الشراء',
+                content: `تم تسجيل طلبك بنجاح للمنتجات بقيمة إجمالية ${totalPrice} ج.م.`,
+                type: 'success',
+                link: '/market-orders'
+            }).catch(err => console.error('Error notifying buyer:', err));
         } catch (error: any) {
             toast.error(error.message || 'حدث خطأ أثناء معالجة الطلب');
             console.error(error);

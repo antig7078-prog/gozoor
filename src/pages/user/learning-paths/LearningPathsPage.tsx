@@ -53,7 +53,7 @@ export const LearningPathsPage = () => {
                         مسارات التعلم المخصصة
                     </h1>
                     <p className="text-xl text-slate-200 font-bold leading-relaxed opacity-90">
-                        مجموعات مختارة بعناية من الدورات التدريبية المصممة لتأهيلك لتخصص معين في المجال الزراعي من الصفر وحتى الاحتراف.
+                        مجموعات مختارة بعناية من الدورات التدريبية المصممة لتأهيلك لتخصص معين في المجال المهني والتقني من الصفر وحتى الاحتراف.
                     </p>
                 </div>
             </div>
@@ -69,7 +69,7 @@ export const LearningPathsPage = () => {
                                     {path.thumbnail_url ? (
                                         <img src={path.thumbnail_url} alt={path.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                     ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center text-slate-300">
+                                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
                                             <Map className="w-20 h-20 opacity-20" />
                                         </div>
                                     )}

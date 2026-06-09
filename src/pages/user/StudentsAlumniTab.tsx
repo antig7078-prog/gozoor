@@ -8,7 +8,7 @@ export const StudentsAlumniTab = () => {
     const categories = [
         {
             title: 'الكورسات',
-            description: 'تصفح مكتبة شاملة من الدورات المتخصصة في مختلف المجالات الزراعية.',
+            description: 'تصفح مكتبة شاملة من الدورات المتخصصة في مختلف المجالات والعلوم.',
             icon: BookOpen,
             href: '/courses/browse',
             color: 'text-brand-primary',
@@ -36,7 +36,7 @@ export const StudentsAlumniTab = () => {
         <PageContainer maxWidth="xl">
             <PageHeader 
                 title="التعليم والتدريب"
-                description="ابدأ رحلة التعلم الخاصة بك مع أفضل الكورسات والمسارات الزراعية المتخصصة."
+                description="ابدأ رحلة التعلم الخاصة بك مع أفضل الكورسات والمسارات المهنية المتخصصة."
                 icon={BookOpen}
             />
 

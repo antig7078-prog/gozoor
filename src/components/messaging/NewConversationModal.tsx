@@ -80,12 +80,12 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
       {/* Background Overlay */}
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Dialog */}
       <div className="relative bg-white w-full max-w-lg rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-100 animate-scaleUp">
         {/* Header */}
-        <div className="p-6 border-b border-slate-150 flex justify-between items-center bg-slate-50/50">
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h3 className="text-lg font-black text-slate-800">محادثة جديدة</h3>
           <button
             onClick={onClose}
@@ -105,14 +105,14 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                 placeholder="ابحث بالاسم أو البريد الإلكتروني..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary placeholder-slate-400 text-slate-800 transition-all"
+                className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary placeholder-slate-450 text-slate-800 transition-all font-bold"
               />
-              <Search className="absolute top-1/2 right-3.5 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Search className="absolute top-1/2 right-3.5 -translate-y-1/2 w-4 h-4 text-slate-450 pointer-events-none" />
             </div>
             <button
               type="submit"
               disabled={loading || !searchTerm.trim()}
-              className="px-6 py-3 bg-brand-primary hover:bg-brand-primary-hover disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl font-bold text-sm transition-all"
+              className="px-6 py-3 bg-brand-primary hover:bg-brand-primary-hover disabled:bg-slate-200 disabled:text-slate-450 text-white rounded-2xl font-black text-sm transition-all"
             >
               {loading ? 'بحث...' : 'بحث'}
             </button>
@@ -122,7 +122,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
         {/* Profiles Results Scroll list */}
         <div className="flex-1 overflow-y-auto p-6 max-h-[40vh] custom-scrollbar min-h-[150px]">
           {error && (
-            <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center gap-2 text-sm mb-4">
+            <div className="p-4 bg-red-50 border border-red-150 text-red-650 rounded-2xl flex items-center gap-2 text-xs font-bold mb-4">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>{error}</span>
             </div>
@@ -130,9 +130,9 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
 
           {profiles.length === 0 ? (
             <div className="text-center py-8 text-slate-400 flex flex-col items-center justify-center h-full">
-              <User className="w-10 h-10 text-slate-300 mb-2" />
-              <p className="font-bold text-sm mb-1">ابحث عن زميل عمل أو مزارع</p>
-              <p className="text-xs">أدخل الاسم أو البريد الإلكتروني في شريط البحث أعلاه.</p>
+              <User className="w-10 h-10 text-slate-350 mb-2" />
+              <p className="font-black text-sm text-slate-700 mb-1">ابحث عن عضو أو تاجر</p>
+              <p className="text-xs font-bold text-slate-400">أدخل الاسم أو البريد الإلكتروني في شريط البحث أعلاه.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -141,7 +141,7 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                   key={profile.id}
                   onClick={() => handleStartConversation(profile.id, profile.full_name)}
                   disabled={creating}
-                  className="w-full flex items-center justify-between p-3.5 border border-slate-150 rounded-2xl hover:bg-slate-50 text-right transition-all duration-150"
+                  className="w-full flex items-center justify-between p-3.5 border border-slate-150 rounded-2xl hover:bg-slate-50 text-right transition-all duration-150 hover:border-brand-primary/40"
                 >
                   <div className="flex items-center gap-3">
                     {profile.avatar_url ? (
@@ -156,11 +156,11 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({
                       </div>
                     )}
                     <div>
-                      <h4 className="font-bold text-slate-800 text-sm">{profile.full_name || 'مستشار جذور'}</h4>
-                      <p className="text-xs text-slate-400 font-medium truncate max-w-[200px]">{profile.email}</p>
+                      <h4 className="font-black text-slate-800 text-sm">{profile.full_name || 'عضو جذور'}</h4>
+                      <p className="text-xs text-slate-450 font-bold truncate max-w-[200px]">{profile.email}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-brand-primary font-bold hover:underline">مراسلة</span>
+                  <span className="text-xs text-brand-primary font-black hover:underline">مراسلة</span>
                 </button>
               ))}
             </div>

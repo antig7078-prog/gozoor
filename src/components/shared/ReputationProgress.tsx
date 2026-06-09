@@ -82,7 +82,7 @@ export const ReputationProgress: React.FC<ReputationProgressProps> = ({
             </div>
             <div className="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50 p-0.5">
               <div
-                className="h-full bg-gradient-to-r from-brand-primary to-brand-accent rounded-full transition-all duration-500 ease-out"
+                className="h-full bg-brand-primary rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${percentage}%` }}
               />
             </div>

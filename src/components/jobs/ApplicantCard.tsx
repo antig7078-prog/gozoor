@@ -77,7 +77,7 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({
                 
                 {/* Applicant Bio Profile */}
                 <div className="flex gap-4 items-center">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-primary/10 to-brand-accent/10 border border-brand-primary/15 flex items-center justify-center shrink-0 shadow-inner overflow-hidden">
+                    <div className="w-16 h-16 rounded-2xl bg-brand-primary/10 border border-brand-primary/15 flex items-center justify-center shrink-0 shadow-inner overflow-hidden">
                         {profile?.avatar_url ? (
                             <img src={profile.avatar_url} alt={profile?.full_name || 'صورة المتقدم'} className="w-full h-full object-cover" />
                         ) : (
