@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, MapPin, DollarSign, Clock, Send, FileText, CheckCircle2, ChevronRight, Building2, Sparkles, Zap, ChevronLeft, Calendar } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Clock, Send, FileText, CheckCircle2, ChevronRight, Building2, Sparkles, Zap, ChevronLeft, Calendar, AlertTriangle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { SkillTags } from '../../../components/jobs/SkillTags';
 import { jobsService } from '../../../services/jobsService';
 import { notificationService } from '../../../services/notificationService';
+import { userService } from '../../../services/userService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
 import { toast } from 'react-hot-toast';
@@ -28,6 +29,7 @@ export const JobDetailsPage = () => {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [hasApplied, setHasApplied] = useState(false);
+    const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchJobAndApplicationStatus = async () => {
@@ -43,6 +45,9 @@ export const JobDetailsPage = () => {
 
                     if (appError) throw new Error(appError);
                     if (appliedStatus) setHasApplied(true);
+
+                    const { data: profile } = await userService.getProfile(user.id);
+                    setVerificationStatus(profile?.verification_status || 'unverified');
                 }
 
             } catch (error) {
@@ -58,6 +63,11 @@ export const JobDetailsPage = () => {
     const handleSubmitApplication = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!requireAuth('سجّل دخولك الأول عشان تقدر تقدم على الوظيفة دي 💼')) return;
+
+        if (verificationStatus !== 'verified') {
+            toast.error('يجب توثيق حسابك أولاً لتتمكن من التقديم على الوظائف');
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -98,7 +108,7 @@ export const JobDetailsPage = () => {
     if (!job) {
         return (
             <PageContainer>
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center py-32 bg-white rounded-[40px] border border-border-subtle shadow-2xl shadow-slate-200/50 max-w-2xl mx-auto"
@@ -108,8 +118,8 @@ export const JobDetailsPage = () => {
                     </div>
                     <h2 className="text-3xl font-black text-text-primary mb-4">لم يتم العثور على الوظيفة</h2>
                     <p className="text-text-secondary mb-10 font-bold text-lg leading-relaxed">ربما تم حذف هذه الوظيفة أو أنها لم تعد متاحة حالياً.</p>
-                    <Link 
-                        to="/jobs" 
+                    <Link
+                        to="/jobs"
                         className="inline-flex items-center gap-3 px-10 py-5 bg-brand-primary text-white rounded-2xl font-black shadow-xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all"
                     >
                         <ChevronRight className="w-5 h-5" />
@@ -125,7 +135,7 @@ export const JobDetailsPage = () => {
     return (
         <PageContainer maxWidth="md">
             {/* Breadcrumb / Back Link */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="mb-6 sm:mb-10"
@@ -141,7 +151,7 @@ export const JobDetailsPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-10">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-white rounded-[2rem] sm:rounded-[40px] border border-border-subtle shadow-2xl shadow-slate-200/40 overflow-hidden relative"
@@ -199,7 +209,7 @@ export const JobDetailsPage = () => {
                                         <Sparkles className="w-12 h-12 sm:w-16 sm:h-16 text-brand-primary" />
                                     </div>
                                     {job.requirements || 'لم يتم تحديد متطلبات خاصة لهذه الوظيفة.'}
-                                    
+
                                     {/* Render skills tags below the text if they exist */}
                                     {job.skills && (
                                         <div className="mt-6 pt-6 border-t border-slate-100">
@@ -215,69 +225,112 @@ export const JobDetailsPage = () => {
                     {/* Apply Form Section */}
                     <AnimatePresence>
                         {showApplyForm && !hasApplied && !isOwner && (
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 30 }}
-                                className="bg-white rounded-[40px] border-2 border-brand-primary/20 shadow-2xl shadow-brand-primary/10 overflow-hidden relative" 
+                                className="bg-white rounded-[40px] border-2 border-brand-primary/20 shadow-2xl shadow-brand-primary/10 overflow-hidden relative"
                                 id="apply-form"
                             >
-                                <div className="p-6 sm:p-10 border-b border-slate-50 bg-brand-primary/[0.02] flex items-center gap-4 sm:gap-6">
-                                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-brand-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/30">
-                                        <Send className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-xl sm:text-2xl font-black text-text-primary">قدم الآن لهذه الوظيفة</h2>
-                                        <p className="text-text-secondary text-sm sm:text-base font-bold">املأ بياناتك وسنتواصل معك في أقرب وقت</p>
-                                    </div>
-                                </div>
-                                <form onSubmit={handleSubmitApplication} className="p-6 sm:p-10 md:p-14 space-y-8 sm:space-y-10">
-                                    <div className="space-y-4">
-                                        <label className="text-sm font-black text-text-primary block pr-2">رابط السيرة الذاتية (Google Drive / Dropbox) <span className="text-brand-primary">*</span></label>
-                                        <div className="relative group">
-                                            <FileText className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-300 group-focus-within:text-brand-primary transition-colors" />
-                                            <input
-                                                type="url"
-                                                required
-                                                value={applyForm.resume_url}
-                                                onChange={(e) => setApplyForm({ ...applyForm, resume_url: e.target.value })}
-                                                className="w-full pr-16 pl-6 py-5 bg-surface-primary border border-border-subtle rounded-2xl focus:bg-white focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary outline-none transition-all font-bold placeholder:text-slate-300 shadow-inner"
-                                                placeholder="https://drive.google.com/..."
-                                            />
+                                {verificationStatus !== 'verified' ? (
+                                    <div className="p-8 sm:p-14 text-center space-y-6">
+                                        <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+                                            <AlertTriangle className="w-8 h-8 animate-pulse" />
+                                        </div>
+                                        <div className="space-y-3 max-w-md mx-auto">
+                                            <h3 className="text-2xl font-black text-text-primary">مطلوب توثيق الحساب وإثبات الهوية ⚠️</h3>
+                                            <p className="text-sm font-bold text-text-secondary leading-relaxed">
+                                                لا يمكنك التقدم للوظائف قبل توثيق حسابك وإثبات هويتك. يرجى رفع صورة بطاقة الرقم القومي وملء بياناتك الشخصية الأساسية من صفحة ملفك الشخصي.
+                                            </p>
+
+                                            {verificationStatus === 'pending' && (
+                                                <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl text-xs font-bold text-blue-700">
+                                                    ⏳ طلب التوثيق الخاص بك قيد المراجعة حالياً من قبل الإدارة.
+                                                </div>
+                                            )}
+
+                                            {verificationStatus === 'rejected' && (
+                                                <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl text-xs font-bold text-red-700">
+                                                    ❌ لقد تم رفض طلبك السابق. يرجى تعديل المستندات وإعادة التقديم.
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4 font-bold">
+                                            <Link
+                                                to="/profile"
+                                                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-2xl shadow-lg shadow-brand-primary/20 transition-all text-sm font-black"
+                                            >
+                                                الذهاب لتوثيق الحساب
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowApplyForm(false)}
+                                                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-50 border border-slate-200 text-text-secondary hover:bg-slate-100 rounded-2xl shadow-sm transition-all text-sm"
+                                            >
+                                                إلغاء
+                                            </button>
                                         </div>
                                     </div>
+                                ) : (
+                                    <>
+                                        <div className="p-6 sm:p-10 border-b border-slate-50 bg-brand-primary/[0.02] flex items-center gap-4 sm:gap-6">
+                                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-brand-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/30">
+                                                <Send className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-xl sm:text-2xl font-black text-text-primary">قدم الآن لهذه الوظيفة</h2>
+                                                <p className="text-text-secondary text-sm sm:text-base font-bold">املأ بياناتك وسنتواصل معك في أقرب وقت</p>
+                                            </div>
+                                        </div>
+                                        <form onSubmit={handleSubmitApplication} className="p-6 sm:p-10 md:p-14 space-y-8 sm:space-y-10">
+                                            <div className="space-y-4">
+                                                <label className="text-sm font-black text-text-primary block pr-2">رابط السيرة الذاتية (Google Drive / Dropbox) <span className="text-brand-primary">*</span></label>
+                                                <div className="relative group">
+                                                    <FileText className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-300 group-focus-within:text-brand-primary transition-colors" />
+                                                    <input
+                                                        type="url"
+                                                        required
+                                                        value={applyForm.resume_url}
+                                                        onChange={(e) => setApplyForm({ ...applyForm, resume_url: e.target.value })}
+                                                        className="w-full pr-16 pl-6 py-5 bg-surface-primary border border-border-subtle rounded-2xl focus:bg-white focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary outline-none transition-all font-bold placeholder:text-slate-300 shadow-inner"
+                                                        placeholder="https://drive.google.com/..."
+                                                    />
+                                                </div>
+                                            </div>
 
-                                    <div className="space-y-4">
-                                        <label className="text-sm font-black text-text-primary block pr-2">رسالة تعريفية إضافية</label>
-                                        <textarea
-                                            rows={6}
-                                            value={applyForm.cover_letter}
-                                            onChange={(e) => setApplyForm({ ...applyForm, cover_letter: e.target.value })}
-                                            className="w-full px-6 py-5 bg-surface-primary border border-border-subtle rounded-2xl focus:bg-white focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary outline-none transition-all resize-none font-bold placeholder:text-slate-300 shadow-inner"
-                                            placeholder="أخبرنا عن مهاراتك ولماذا أنت المرشح المثالي لهذه الوظيفة..."
-                                        />
-                                    </div>
+                                            <div className="space-y-4">
+                                                <label className="text-sm font-black text-text-primary block pr-2">رسالة تعريفية إضافية</label>
+                                                <textarea
+                                                    rows={6}
+                                                    value={applyForm.cover_letter}
+                                                    onChange={(e) => setApplyForm({ ...applyForm, cover_letter: e.target.value })}
+                                                    className="w-full px-6 py-5 bg-surface-primary border border-border-subtle rounded-2xl focus:bg-white focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary outline-none transition-all resize-none font-bold placeholder:text-slate-300 shadow-inner"
+                                                    placeholder="أخبرنا عن مهاراتك ولماذا أنت المرشح المثالي لهذه الوظيفة..."
+                                                />
+                                            </div>
 
-                                    <div className="flex flex-col md:flex-row justify-end gap-5 pt-10 border-t border-slate-50">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowApplyForm(false)}
-                                            className="px-10 py-5 bg-slate-100 text-text-secondary rounded-2xl font-black hover:bg-slate-200 transition-all active:scale-95"
-                                        >
-                                            إلغاء
-                                        </button>
-                                        <Button
-                                            type="submit"
-                                            isLoading={isSubmitting}
-                                            variant="premium"
-                                            size="lg"
-                                            fullWidth
-                                            icon={Zap}
-                                        >
-                                            إرسال الطلب الآن
-                                        </Button>
-                                    </div>
-                                </form>
+                                            <div className="flex flex-col md:flex-row justify-end gap-5 pt-10 border-t border-slate-50">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowApplyForm(false)}
+                                                    className="px-10 py-5 bg-slate-100 text-text-secondary rounded-2xl font-black hover:bg-slate-200 transition-all active:scale-95"
+                                                >
+                                                    إلغاء
+                                                </button>
+                                                <Button
+                                                    type="submit"
+                                                    isLoading={isSubmitting}
+                                                    variant="premium"
+                                                    size="lg"
+                                                    fullWidth
+                                                    icon={Zap}
+                                                >
+                                                    إرسال الطلب الآن
+                                                </Button>
+                                            </div>
+                                        </form>
+                                    </>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -285,7 +338,7 @@ export const JobDetailsPage = () => {
 
                 {/* Sidebar Details */}
                 <div className="space-y-10">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="bg-white rounded-[2rem] sm:rounded-[40px] border border-border-subtle p-6 sm:p-10 shadow-2xl shadow-slate-200/40 space-y-8 sm:space-y-10 lg:sticky lg:top-32"
@@ -295,7 +348,7 @@ export const JobDetailsPage = () => {
                                 <Sparkles className="w-5 h-5 text-brand-primary" />
                                 تفاصيل الوظيفة
                             </h4>
-                            
+
                             <div className="space-y-6">
                                 <div className="flex items-start gap-5 group">
                                     <div className="w-12 h-12 rounded-2xl bg-surface-primary flex items-center justify-center shrink-0 group-hover:bg-brand-primary/10 transition-colors shadow-inner">
@@ -386,7 +439,7 @@ export const JobDetailsPage = () => {
                     </motion.div>
 
                     {/* Quick Stats / Info */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 }}

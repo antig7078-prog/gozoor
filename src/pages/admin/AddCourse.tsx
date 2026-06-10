@@ -90,7 +90,7 @@ export const AddCourse = () => {
 
     useEffect(() => {
         const fetchCategories = async () => {
-            const { data } = await supabase.from('categories').select('*').order('name');
+            const { data } = await supabase.from('categories').select('*').eq('type', 'course').order('name');
             if (data) setCategories(data);
         };
         fetchCategories();

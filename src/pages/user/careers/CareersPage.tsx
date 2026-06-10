@@ -26,7 +26,7 @@ export const CareersPage = () => {
             title: 'المنتجات الرقمية',
             description: 'سوق المنتجات الزراعية والرقمية المتنوعة.',
             icon: Package,
-            href: '/marketplace',
+            href: '/user-products',
             color: 'text-purple-500',
             bg: 'bg-purple-50'
         }

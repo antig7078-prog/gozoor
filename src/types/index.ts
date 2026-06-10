@@ -12,6 +12,10 @@ export interface Profile {
   specialization?: string;
   portfolio_url?: string;
   role: UserRole;
+  verification_status?: 'unverified' | 'pending' | 'verified' | 'rejected';
+  identity_document_url?: string;
+  identity_document_back_url?: string;
+  national_id?: string;
   reputation_points?: number;
   reputation_level?: 'beginner' | 'active' | 'professional' | 'trusted' | 'expert';
   jobs_rating?: number;
@@ -26,8 +30,10 @@ export interface Category {
   id: string;
   name: string;
   slug?: string;
+  type?: 'course' | 'product';
   created_at: string;
 }
+
 
 export interface Course {
   id: string;

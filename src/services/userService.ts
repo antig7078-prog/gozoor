@@ -9,7 +9,7 @@ export const userService = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, phone, whatsapp, bio, specialization, portfolio_url, role, avatar_url')
+        .select('full_name, phone, whatsapp, bio, specialization, portfolio_url, role, avatar_url, verification_status, identity_document_url, identity_document_back_url, national_id')
         .eq('id', userId)
         .single();
 
@@ -27,7 +27,7 @@ export const userService = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, bio, specialization, portfolio_url, role, reputation_points, reputation_level, jobs_rating, services_rating, products_rating, overall_rating, created_at')
+        .select('id, full_name, avatar_url, bio, specialization, portfolio_url, role, reputation_points, reputation_level, jobs_rating, services_rating, products_rating, overall_rating, created_at, verification_status')
         .eq('id', userId)
         .single();
 
@@ -51,6 +51,10 @@ export const userService = {
       specialization?: string;
       portfolio_url?: string;
       avatar_url?: string;
+      verification_status?: 'unverified' | 'pending' | 'verified' | 'rejected';
+      identity_document_url?: string;
+      identity_document_back_url?: string;
+      national_id?: string;
     }
   ) {
     try {
@@ -80,6 +84,41 @@ export const userService = {
 
       if (error) throw error;
       return { data, error: null };
+    } catch (err) {
+      return { data: null, error: getFriendlyErrorMessage(err) };
+    }
+  },
+
+  /**
+   * Fetch all profiles with verification requests (Admin only)
+   */
+  async getPendingVerifications() {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .neq('verification_status', 'unverified')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: getFriendlyErrorMessage(err) };
+    }
+  },
+
+  /**
+   * Update a user's verification status (Admin only)
+   */
+  async updateVerificationStatus(userId: string, status: 'unverified' | 'pending' | 'verified' | 'rejected') {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ verification_status: status })
+        .eq('id', userId);
+
+      if (error) throw error;
+      return { data: null, error: null };
     } catch (err) {
       return { data: null, error: getFriendlyErrorMessage(err) };
     }

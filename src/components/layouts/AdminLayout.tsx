@@ -18,7 +18,8 @@ import {
     Trophy,
     MessageCircle,
     Map,
-    ShoppingBag
+    ShoppingBag,
+    ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -87,6 +88,7 @@ export const AdminLayout = () => {
         { name: 'الوظائف', href: '/admin/jobs', icon: Briefcase },
         { name: 'الخدمات', href: '/admin/services', icon: MonitorPlay },
         { name: 'المستخدمين', href: '/admin/users', icon: Users },
+        { name: 'توثيق الحسابات', href: '/admin/verifications', icon: ShieldCheck },
         { name: 'إدارة المجتمع', href: '/admin/community', icon: MessageCircle },
         { name: 'طلبات الالتحاق', href: '/admin/enrollments', icon: CheckCircle2 },
         { name: 'طلبات الشهادات', href: '/admin/certificates', icon: Trophy },

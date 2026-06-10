@@ -80,6 +80,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     specialization TEXT,
     portfolio_url TEXT,
     role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    verification_status TEXT DEFAULT 'unverified' CHECK (verification_status IN ('unverified', 'pending', 'verified', 'rejected')),
+    identity_document_url TEXT,
+    identity_document_back_url TEXT,
+    national_id TEXT,
     reputation_points INTEGER DEFAULT 0,
     reputation_level TEXT DEFAULT 'beginner' CHECK (reputation_level IN ('beginner', 'active', 'professional', 'trusted', 'expert')),
     jobs_rating DECIMAL(3,2) DEFAULT 0,
@@ -116,8 +120,10 @@ CREATE TABLE IF NOT EXISTS public.categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT UNIQUE NOT NULL,
     slug TEXT UNIQUE,
+    type TEXT DEFAULT 'course' CHECK (type IN ('course', 'product')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
 
 CREATE TABLE IF NOT EXISTS public.courses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -466,6 +472,8 @@ CREATE POLICY "Profiles are public for select of public info" ON public.profiles
   EXISTS (SELECT 1 FROM public.jobs j WHERE j.employer_id = public.profiles.id)
 );
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE USING (public.is_admin(auth.uid()));
+
 
 -- سياسات المجتمع (بوستات)
 CREATE POLICY "Posts are public" ON public.posts FOR SELECT USING (true);

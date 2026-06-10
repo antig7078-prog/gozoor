@@ -371,11 +371,12 @@ export const courseService = {
   /**
    * Categories
    */
-  async getCategories() {
+  async getCategories(type: 'course' | 'product' = 'course') {
     try {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
+        .eq('type', type)
         .order('name');
       if (error) throw error;
       return { data: data || [], error: null };
@@ -384,11 +385,11 @@ export const courseService = {
     }
   },
 
-  async createCategory(name: string) {
+  async createCategory(name: string, type: 'course' | 'product' = 'course') {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .insert([{ name }])
+        .insert([{ name, type }])
         .select()
         .single();
       if (error) throw error;

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { userService } from '../../../services/userService';
 import { marketplaceService } from '../../../services/marketplaceService';
 import { useAuth } from '../../../contexts/AuthContext';
-import { MonitorPlay, ChevronRight, Upload, Sparkles, Image as ImageIcon, DollarSign, Clock, Info, HelpCircle, Layers, CheckCircle2 } from 'lucide-react';
+import { MonitorPlay, ChevronRight, Upload, Sparkles, Image as ImageIcon, DollarSign, Clock, Info, HelpCircle, Layers, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -17,6 +17,8 @@ export const AddService = () => {
     const { user } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [profileLoading, setProfileLoading] = useState(true);
+    const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+    const [hasMissingProfileInfo, setHasMissingProfileInfo] = useState(false);
 
     useEffect(() => {
         const checkProfile = async () => {
@@ -26,12 +28,10 @@ export const AddService = () => {
 
                 if (error) throw new Error(error);
 
-                if (data && (!data.full_name || !data.phone || !data.whatsapp)) {
-                    toast.error('برجاء إكمال بياناتك (الاسم، رقم الهاتف، والواتساب) في ملفك الشخصي أولاً قبل إضافة خدمات.', {
-                        duration: 5000,
-                        icon: '⚠️'
-                    });
-                    setTimeout(() => navigate('/profile'), 2000);
+                if (data) {
+                    setVerificationStatus(data.verification_status || 'unverified');
+                    const hasMissing = !data.full_name?.trim() || !data.phone?.trim() || !data.whatsapp?.trim();
+                    setHasMissingProfileInfo(hasMissing);
                 }
             } catch (error) {
                 console.error('Error checking profile:', error);
@@ -173,6 +173,78 @@ export const AddService = () => {
                 <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                     <LoadingSpinner size="lg" />
                     <p className="text-text-muted font-bold">جاري التحقق من بيانات ملفك الشخصي...</p>
+                </div>
+            ) : hasMissingProfileInfo ? (
+                <div className="bg-white border border-border-subtle rounded-[2.5rem] p-10 sm:p-16 text-center space-y-6 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-brand-primary/5 rounded-full blur-3xl" />
+                    
+                    <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-3xl flex items-center justify-center mx-auto shadow-inner relative z-10">
+                        <AlertTriangle className="w-10 h-10 animate-pulse" />
+                    </div>
+                    
+                    <div className="space-y-3 relative z-10 max-w-xl mx-auto">
+                        <h3 className="text-2xl font-black text-text-primary">برجاء إكمال بياناتك الشخصية أولاً ⚠️</h3>
+                        <p className="text-sm font-bold text-text-secondary leading-relaxed">
+                            لتتمكن من إضافة خدمات جديدة، يجب أولاً إكمال بياناتك الشخصية الأساسية (الاسم بالكامل، رقم الهاتف، ورقم الواتساب) في ملفك الشخصي.
+                        </p>
+                    </div>
+
+                    <div className="pt-6 flex flex-col sm:flex-row justify-center gap-4 relative z-10 font-bold">
+                        <Link
+                            to="/profile"
+                            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-2xl shadow-lg shadow-brand-primary/20 transition-all text-sm font-black"
+                        >
+                            تحديث الملف الشخصي الآن
+                        </Link>
+                        <Link
+                            to="/user-services"
+                            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-50 border border-slate-200 text-text-secondary hover:bg-slate-100 rounded-2xl shadow-sm transition-all text-sm"
+                        >
+                            العودة للخلف
+                        </Link>
+                    </div>
+                </div>
+            ) : verificationStatus !== 'verified' ? (
+                <div className="bg-white border border-border-subtle rounded-[2.5rem] p-10 sm:p-16 text-center space-y-6 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-brand-primary/5 rounded-full blur-3xl" />
+                    
+                    <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-3xl flex items-center justify-center mx-auto shadow-inner relative z-10">
+                        <AlertTriangle className="w-10 h-10 animate-pulse" />
+                    </div>
+                    
+                    <div className="space-y-3 relative z-10 max-w-xl mx-auto">
+                        <h3 className="text-2xl font-black text-text-primary">مطلوب توثيق الحساب وإثبات الهوية ⚠️</h3>
+                        <p className="text-sm font-bold text-text-secondary leading-relaxed">
+                            لتتمكن من إضافة خدمات جديدة، يجب أولاً توثيق حسابك وإثبات هويتك من خلال رفع صورة بطاقة الرقم القومي وملء بياناتك الشخصية الأساسية.
+                        </p>
+                        
+                        {verificationStatus === 'pending' && (
+                            <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl text-xs font-bold text-blue-700">
+                                ⏳ طلب التوثيق الخاص بك قيد المراجعة حالياً من قبل الإدارة. سيتم تفعيل حسابك فور الموافقة عليه.
+                            </div>
+                        )}
+
+                        {verificationStatus === 'rejected' && (
+                            <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl text-xs font-bold text-red-700">
+                                ❌ لقد تم رفض طلبك السابق. يرجى تعديل المستندات وإعادة تقديم الطلب من الملف الشخصي.
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="pt-6 flex flex-col sm:flex-row justify-center gap-4 relative z-10 font-bold">
+                        <Link
+                            to="/profile"
+                            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-2xl shadow-lg shadow-brand-primary/20 transition-all text-sm font-black"
+                        >
+                            الانتقال لصفحة توثيق الحساب
+                        </Link>
+                        <Link
+                            to="/user-services"
+                            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-50 border border-slate-200 text-text-secondary hover:bg-slate-100 rounded-2xl shadow-sm transition-all text-sm"
+                        >
+                            العودة للخلف
+                        </Link>
+                    </div>
                 </div>
             ) : (
                 <>

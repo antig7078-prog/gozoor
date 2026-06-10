@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import type { Category } from '../../types';
 
 export const AdminCategories = () => {
+    const [activeTab, setActiveTab] = useState<'course' | 'product'>('course');
     const [categories, setCategories] = useState<Category[]>([]);
     const [newCategory, setNewCategory] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -27,21 +28,27 @@ export const AdminCategories = () => {
 
     const fetchCategories = async () => {
         setIsLoading(true);
-        const { data, error } = await supabase.from('categories').select('*').order('name');
+        const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('type', activeTab)
+            .order('name');
         if (!error) setCategories((data as Category[]) || []);
         setIsLoading(false);
     };
 
     useEffect(() => {
         fetchCategories();
-    }, []);
+    }, [activeTab]);
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newCategory.trim()) return;
 
         setIsAdding(true);
-        const { error } = await supabase.from('categories').insert([{ name: newCategory.trim() }]);
+        const { error } = await supabase
+            .from('categories')
+            .insert([{ name: newCategory.trim(), type: activeTab }]);
 
         if (error) {
             toast.error('التصنيف موجود بالفعل أو حدث خطأ');
@@ -69,7 +76,7 @@ export const AdminCategories = () => {
             fetchCategories();
             setConfirmConfig({ isOpen: false, catId: '', catName: '' });
         } catch (error: any) {
-            toast.error('حدث خطأ أثناء الحذف، قد يكون التصنيف مرتبطاً بكورسات حالية.');
+            toast.error('حدث خطأ أثناء الحذف، قد يكون التصنيف مرتبطاً بكورسات أو منتجات حالية.');
             console.error(error);
         } finally {
             setIsActionLoading(false);
@@ -89,22 +96,48 @@ export const AdminCategories = () => {
             />
             <PageHeader
                 title="إدارة التصنيفات"
-                description="أضف الأقسام التي ستظهر عند إنشاء الكورسات."
+                description={activeTab === 'course' ? "أضف الأقسام التي ستظهر عند إنشاء الكورسات." : "أضف الأقسام التي ستظهر عند إنشاء المنتجات."}
                 icon={Tag}
             />
+
+            {/* Tabs Selector */}
+            <div className="flex gap-2 border-b border-border-default mb-8 bg-white p-2 rounded-card border shadow-sm">
+                <button
+                    onClick={() => setActiveTab('course')}
+                    className={`flex-1 sm:flex-initial px-8 py-3 rounded-button font-black text-sm transition-all duration-300 ${
+                        activeTab === 'course'
+                            ? 'bg-brand-primary text-white shadow-md shadow-brand-primary/20'
+                            : 'text-text-secondary hover:bg-slate-100 hover:text-text-primary'
+                    }`}
+                >
+                    تصنيفات الكورسات
+                </button>
+                <button
+                    onClick={() => setActiveTab('product')}
+                    className={`flex-1 sm:flex-initial px-8 py-3 rounded-button font-black text-sm transition-all duration-300 ${
+                        activeTab === 'product'
+                            ? 'bg-brand-primary text-white shadow-md shadow-brand-primary/20'
+                            : 'text-text-secondary hover:bg-slate-100 hover:text-text-primary'
+                    }`}
+                >
+                    تصنيفات المنتجات
+                </button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Form Side */}
                 <div className="md:col-span-1">
                     <div className="bg-white rounded-card border border-border-default p-6 shadow-sm sticky top-8">
-                        <h3 className="font-black text-text-primary mb-4 text-lg">إضافة تصنيف جديد</h3>
+                        <h3 className="font-black text-text-primary mb-4 text-lg">
+                            {activeTab === 'course' ? 'إضافة تصنيف كورسات جديد' : 'إضافة تصنيف منتجات جديد'}
+                        </h3>
                         <form onSubmit={handleAdd} className="space-y-4">
                             <div>
                                 <input
                                     type="text"
                                     value={newCategory}
                                     onChange={(e) => setNewCategory(e.target.value)}
-                                    placeholder="اسم القسم (مثلاً: تصميم)"
+                                    placeholder={activeTab === 'course' ? "اسم القسم (مثلاً: تصميم)" : "اسم القسم (مثلاً: إلكترونيات)"}
                                     className="w-full px-4 py-3 bg-surface-primary border border-border-default rounded-input font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-right"
                                 />
                             </div>
@@ -125,7 +158,9 @@ export const AdminCategories = () => {
                 <div className="md:col-span-2">
                     <div className="bg-white rounded-card border border-border-default overflow-hidden shadow-sm">
                         <div className="p-6 border-b border-border-subtle bg-surface-primary/50">
-                            <h3 className="font-black text-text-primary">التصنيفات الحالية</h3>
+                            <h3 className="font-black text-text-primary">
+                                {activeTab === 'course' ? 'تصنيفات الكورسات الحالية' : 'تصنيفات المنتجات الحالية'}
+                            </h3>
                         </div>
 
                         {isLoading ? (

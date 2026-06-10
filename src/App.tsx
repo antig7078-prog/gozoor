@@ -82,6 +82,7 @@ const AdminEnrollments = lazy(() => import('./pages/admin/AdminEnrollments').the
 const AdminCommunity = lazy(() => import('./pages/admin/AdminCommunity').then(m => ({ default: m.AdminCommunity })));
 const AdminLearningPaths = lazy(() => import('./pages/admin/AdminLearningPaths').then(m => ({ default: m.AdminLearningPaths })));
 const AddLearningPath = lazy(() => import('./pages/admin/AddLearningPath').then(m => ({ default: m.AddLearningPath })));
+const AdminVerifications = lazy(() => import('./pages/admin/AdminVerifications').then(m => ({ default: m.AdminVerifications })));
 
 function App() {
   return (
@@ -174,6 +175,7 @@ function App() {
                   <Route path="/admin/learning-paths/new" element={<AddLearningPath />} />
                   <Route path="/admin/learning-paths/edit/:id" element={<AddLearningPath />} />
                   <Route path="/admin/settings" element={<AdminSettings />} />
+                  <Route path="/admin/verifications" element={<AdminVerifications />} />
                 </Route>
               </Route>
 
