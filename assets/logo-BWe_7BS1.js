@@ -1,0 +1,1 @@
+var e=`/gozoor/assets/logo-j7h7MdSq.jpeg`;export{e as t};
