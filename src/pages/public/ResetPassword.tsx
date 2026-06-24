@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, Leaf, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Lock, CheckCircle2, ArrowRight } from 'lucide-react';
+import logoImg from '../../assets/logo.jpeg';
 import { Button } from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 
@@ -96,8 +97,8 @@ export const ResetPassword = () => {
                             className="relative group"
                         >
                             <div className="absolute inset-0 bg-brand-primary blur-xl opacity-40 rounded-full"></div>
-                            <div className="relative bg-brand-primary p-5 rounded-[1.5rem] border border-brand-primary/30">
-                                <Leaf className="w-10 h-10 text-white" />
+                            <div className="relative p-0 rounded-[1.5rem] border border-brand-primary/30 overflow-hidden w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
+                                <img src={logoImg} alt="جذور" className="w-full h-full object-cover" />
                             </div>
                         </motion.div>
                         <h1 className="text-3xl font-black mt-6 tracking-tight text-white">

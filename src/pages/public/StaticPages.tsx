@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Leaf } from 'lucide-react';
-
+import { ArrowRight } from 'lucide-react';
+import logoImg from '../../assets/logo.jpeg';
 interface StaticPageProps {
     title: string;
     children: React.ReactNode;
@@ -14,10 +14,9 @@ export const StaticPage = ({ title, children }: StaticPageProps) => {
             <nav className="fixed top-0 left-0 right-0 z-50 bg-brand-bg/80 backdrop-blur-2xl border-b border-white/5 py-4">
                 <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center">
-                            <Leaf className="w-5 h-5 text-white" />
+                        <div className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden">
+                            <img src={logoImg} alt="جذور" className="w-full h-full object-cover" />
                         </div>
-                        <span className="text-2xl font-black text-white">جذور</span>
                     </Link>
                     <Link to="/" className="flex items-center gap-2 text-brand-primary font-bold hover:text-brand-primary-hover transition-colors">
                         <ArrowRight className="w-4 h-4" />

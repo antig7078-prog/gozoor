@@ -38,6 +38,7 @@ import team3 from '../../assets/team/3.jpeg';
 import team4 from '../../assets/team/4.jpeg';
 import team5 from '../../assets/team/5.jpeg';
 import team6 from '../../assets/team/6.jpeg';
+import logoImg from '../../assets/logo.jpeg';
 
 export const LandingPage = () => {
     const { user } = useAuth();
@@ -90,11 +91,10 @@ export const LandingPage = () => {
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled || isMenuOpen ? 'bg-brand-bg/90 backdrop-blur-2xl shadow-lg shadow-black/40 py-4 border-b border-white/5' : 'bg-transparent py-6'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
-                        <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-brand-primary rounded-xl sm:rounded-2xl shadow-lg shadow-brand-primary/20 transform group-hover:rotate-12 transition-all duration-300">
-                            <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-white relative z-10" />
-                            <div className="absolute inset-0 bg-white/20 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-xl sm:rounded-2xl shadow-lg shadow-brand-primary/20 transform group-hover:rotate-12 transition-all duration-300 overflow-hidden">
+                            <img src={logoImg} alt="جذور" className="w-full h-full object-cover relative z-10" />
+                            <div className="absolute inset-0 bg-white/20 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity z-20" />
                         </div>
-                        <span className="text-xl sm:text-2xl font-black text-white tracking-tighter">جذور</span>
                     </Link>
 
                     <div className="hidden lg:flex items-center gap-8 xl:gap-10">
@@ -474,10 +474,9 @@ export const LandingPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-16">
                         <div className="lg:col-span-2 text-center sm:text-right">
                             <Link to="/" className="flex items-center justify-center sm:justify-start gap-3 mb-6 sm:mb-8 group">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-brand-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-all duration-300">
-                                    <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-all duration-300 overflow-hidden">
+                                    <img src={logoImg} alt="جذور" className="w-full h-full object-cover" />
                                 </div>
-                                <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">جذور</span>
                             </Link>
                             <p className="text-brand-primary-light/80 font-medium leading-relaxed max-w-md mb-8 text-base sm:text-lg mx-auto sm:mx-0">
                                 المكان الأول والبيئة المتكاملة عشان تتعلم وتتاجر وتطور نفسك في القطاع الزراعي. هدفنا إننا نربط بين المعرفة وسوق العمل في مكان واحد.

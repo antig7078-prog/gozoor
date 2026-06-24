@@ -22,6 +22,7 @@ import {
     ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import logoImg from '../../assets/logo.jpeg';
 
 export const AdminLayout = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -138,12 +139,9 @@ export const AdminLayout = () => {
                 className={`fixed inset-y-0 right-0 z-50 w-64 sm:w-72 bg-brand-bg shadow-[0_0_40px_rgba(0,0,0,0.1)] flex flex-col transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} ${isDesktopSidebarOpen ? 'lg:translate-x-0' : 'lg:translate-x-full'}`}
             >
                 <div className="p-6 flex items-center justify-between border-b border-brand-primary/10">
-                    <div className="flex items-center gap-3">
-                        <div className="relative w-12 h-12 flex items-center justify-center bg-brand-primary rounded-2xl shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-all duration-300">
-                            <Leaf className="w-6 h-6 text-white relative z-10" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-black text-white leading-tight">جذور</h1>
+                    <div className="flex items-center justify-center w-full">
+                        <div className="relative w-16 h-16 flex items-center justify-center rounded-2xl shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-all duration-300 overflow-hidden">
+                            <img src={logoImg} alt="جذور" className="w-full h-full object-cover relative z-10" />
                         </div>
                     </div>
                     <button

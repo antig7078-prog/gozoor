@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../lib/store/cartStore';
 import { UserLayout } from './UserLayout';
+import logoImg from '../../assets/logo.jpeg';
 
 /**
  * PublicBrowseLayout - A lightweight layout for public browsing pages
@@ -44,10 +45,9 @@ export const PublicBrowseLayout = () => {
                     <div className="flex items-center justify-between h-16 sm:h-20">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-transform duration-300">
-                                <Leaf className="w-5 h-5 text-white" />
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/20 group-hover:rotate-12 transition-transform duration-300 overflow-hidden">
+                                <img src={logoImg} alt="جذور" className="w-full h-full object-cover" />
                             </div>
-                            <span className="text-xl font-black text-brand-bg hidden sm:block">جذور</span>
                         </Link>
 
                         {/* Desktop Nav */}

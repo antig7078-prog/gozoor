@@ -6,6 +6,7 @@ import { Mail, Lock, Leaf, ArrowLeft } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import logoImg from '../../assets/logo.jpeg';
 
 export const Login = () => {
     const [email, setEmail] = useState('');
@@ -81,8 +82,8 @@ export const Login = () => {
                             className="relative group"
                         >
                             <div className="absolute inset-0 bg-brand-primary blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500 rounded-full"></div>
-                            <div className="relative bg-brand-primary p-4 sm:p-5 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-xl shadow-brand-primary/20 border border-brand-primary/30 transform transition-transform duration-500 group-hover:-translate-y-1">
-                                <Leaf className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                            <div className="relative p-0 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-xl shadow-brand-primary/20 border border-brand-primary/30 transform transition-transform duration-500 group-hover:-translate-y-1 overflow-hidden w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
+                                <img src={logoImg} alt="جذور" className="w-full h-full object-cover" />
                             </div>
                         </motion.div>
                         <h1 className="text-3xl sm:text-4xl font-black mt-4 sm:mt-6 tracking-tight text-white">

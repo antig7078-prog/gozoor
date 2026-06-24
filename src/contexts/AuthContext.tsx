@@ -2,8 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
-import { Leaf } from 'lucide-react';
-
+import logoImg from '../assets/logo.jpeg';
 interface AuthContextType {
     session: Session | null;
     user: User | null;
@@ -119,8 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             {loading ? (
                 <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg text-white">
                     <div className="relative mb-8">
-                        <div className="w-20 h-20 bg-brand-primary rounded-3xl shadow-2xl shadow-brand-primary/20 flex items-center justify-center animate-pulse">
-                            <Leaf className="w-10 h-10 text-white" />
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl shadow-2xl shadow-brand-primary/20 flex items-center justify-center animate-pulse overflow-hidden p-0">
+                            <img src={logoImg} alt="جذور" className="w-full h-full object-cover" />
                         </div>
                         <div className="absolute -inset-4 border-2 border-brand-primary/10 rounded-[2rem] animate-[spin_4s_linear_infinite]"></div>
                     </div>

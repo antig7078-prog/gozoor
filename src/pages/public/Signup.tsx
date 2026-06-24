@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowLeft, UserPlus, User } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, User } from 'lucide-react';
+import logoImg from '../../assets/logo.jpeg';
 import { Button } from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -84,10 +85,11 @@ export const Signup = () => {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-                            className="mb-6"
+                            className="relative group mb-6 flex justify-center"
                         >
-                            <div className="inline-flex items-center justify-center p-3 sm:p-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl shadow-xl shadow-brand-primary/20">
-                                <UserPlus className="w-6 h-6 sm:w-8 sm:h-8 text-brand-primary" />
+                            <div className="absolute inset-0 bg-brand-primary blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500 rounded-full"></div>
+                            <div className="relative p-0 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-xl shadow-brand-primary/20 border border-brand-primary/30 transform transition-transform duration-500 group-hover:-translate-y-1 overflow-hidden w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
+                                <img src={logoImg} alt="جذور" className="w-full h-full object-cover" />
                             </div>
                         </motion.div>
                         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
