@@ -13,8 +13,6 @@ export const reviewService = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { eligible: false, error: 'يجب تسجيل الدخول للتحقق من إمكانية التقييم.' };
 
-      // To enforce purchase/enrollment requirements, uncomment the checks below:
-      /*
       if (itemType === 'Service') {
         const { data: orders, error } = await supabase
           .from('service_orders')
@@ -61,9 +59,8 @@ export const reviewService = {
         if (error) throw error;
         return { eligible: !!enrollment, error: null };
       }
-      */
 
-      return { eligible: true, error: null };
+      return { eligible: false, error: null };
     } catch (err) {
       return { eligible: false, error: getFriendlyErrorMessage(err) };
     }

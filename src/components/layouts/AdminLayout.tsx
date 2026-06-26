@@ -19,7 +19,8 @@ import {
     MessageCircle,
     Map,
     ShoppingBag,
-    ShieldCheck
+    ShieldCheck,
+    CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoImg from '../../assets/logo.jpeg';
@@ -84,7 +85,8 @@ export const AdminLayout = () => {
         { name: 'الدورات التعليمية', href: '/admin/courses', icon: BookOpen },
         { name: 'التصنيفات', href: '/admin/categories', icon: Tag },
         { name: 'المنتجات', href: '/admin/products', icon: Store },
-        { name: 'الطلبات', href: '/admin/orders', icon: ShoppingBag },
+        { name: 'طلبات المتجر', href: '/admin/marketplace-orders', icon: ShoppingBag },
+        { name: 'الطلبات والاشتراكات', href: '/admin/orders', icon: CreditCard },
         { name: 'مسارات التعلم', href: '/admin/learning-paths', icon: Map },
         { name: 'الوظائف', href: '/admin/jobs', icon: Briefcase },
         { name: 'الخدمات', href: '/admin/services', icon: MonitorPlay },

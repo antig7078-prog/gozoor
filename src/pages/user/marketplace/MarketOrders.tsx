@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { marketplaceService } from '../../../services/marketplaceService';
+import { notificationService } from '../../../services/notificationService';
+import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Package, Clock, CheckCircle2, XCircle, Truck, ShoppingBag, ChevronLeft, Calendar, Hash, Tag } from 'lucide-react';
+import { Package, Clock, CheckCircle2, XCircle, Truck, ShoppingBag, ChevronLeft, Calendar, Hash, Tag, Ban, Building } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../../components/shared/PageHeader';
+import { toast } from 'react-hot-toast';
 
 interface OrderItem {
     id: string;
@@ -21,6 +24,10 @@ interface Order {
     total_amount: number;
     status: string;
     created_at: string;
+    payment_method?: string;
+    tracking_number?: string;
+    shipping_company?: string;
+    estimated_delivery_date?: string;
     order_items: OrderItem[];
 }
 
@@ -78,6 +85,43 @@ export const MarketOrders = () => {
             case 'Delivered': return 'تم التوصيل';
             case 'Cancelled': return 'ملغي';
             default: return status;
+        }
+    };
+
+    const handleCancelOrder = async (orderId: string) => {
+        if (!window.confirm('هل أنت متأكد من إلغاء هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+        try {
+            const { error } = await marketplaceService.updateOrderStatus(orderId, 'Cancelled');
+            if (error) throw new Error(error);
+
+            // Update local state
+            setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'Cancelled' } : o));
+
+            // Notify sellers about cancellation
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                for (const item of order.order_items) {
+                    // Get seller_id from product
+                    const { data: product } = await supabase
+                        .from('products')
+                        .select('seller_id')
+                        .eq('id', item.product_id)
+                        .single();
+                    if (product?.seller_id) {
+                        notificationService.sendNotification({
+                            userId: product.seller_id,
+                            title: 'تم إلغاء طلب',
+                            content: `قام المشتري بإلغاء الطلب رقم #${orderId.slice(0, 8)}.`,
+                            type: 'warning',
+                            link: '/customer-orders'
+                        });
+                    }
+                }
+            }
+
+            toast.success('تم إلغاء الطلب بنجاح');
+        } catch (error: any) {
+            toast.error(error.message || 'حدث خطأ أثناء إلغاء الطلب');
         }
     };
 
@@ -187,15 +231,55 @@ export const MarketOrders = () => {
                                         </div>
                                     </div>
                                 ))}
+
+                                {/* Payment & Shipping Info */}
+                                {(order.payment_method || order.tracking_number) && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                                        {order.payment_method && (
+                                            <div className="bg-surface-primary rounded-xl p-3 text-xs font-bold">
+                                                <span className="text-text-muted">طريقة الدفع: </span>
+                                                <span className="text-text-primary">{order.payment_method === 'cod' ? 'الدفع عند الاستلام' : 'تحويل بنكي'}</span>
+                                            </div>
+                                        )}
+                                        {order.tracking_number && (
+                                            <div className="bg-surface-primary rounded-xl p-3 text-xs font-bold">
+                                                <span className="text-text-muted">رقم التتبع: </span>
+                                                <span className="text-text-primary dir-ltr">{order.tracking_number}</span>
+                                            </div>
+                                        )}
+                                        {order.shipping_company && (
+                                            <div className="bg-surface-primary rounded-xl p-3 text-xs font-bold">
+                                                <span className="text-text-muted">شركة الشحن: </span>
+                                                <span className="text-text-primary">{order.shipping_company}</span>
+                                            </div>
+                                        )}
+                                        {order.estimated_delivery_date && (
+                                            <div className="bg-surface-primary rounded-xl p-3 text-xs font-bold">
+                                                <span className="text-text-muted">تاريخ التوصيل المتوقع: </span>
+                                                <span className="text-text-primary">{new Date(order.estimated_delivery_date).toLocaleDateString('ar-EG')}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             
-                            <div className="px-8 py-4 bg-surface-primary/30 border-t border-slate-50 flex justify-center items-center">
+                            <div className="px-8 py-4 bg-surface-primary/30 border-t border-slate-50 flex items-center justify-between">
                                 <Link 
                                     to={`/marketplace/${order.order_items[0]?.product_id}`}
                                     className="text-[10px] font-black text-text-muted hover:text-brand-primary uppercase tracking-[2px] transition-colors"
                                 >
                                     عرض تفاصيل المنتجات في هذا الطلب
                                 </Link>
+                                
+                                {order.status === 'Pending' && (
+                                    <button
+                                        onClick={() => handleCancelOrder(order.id)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-black hover:bg-red-100 transition-all border border-red-100"
+                                    >
+                                        <Ban className="w-4 h-4" />
+                                        إلغاء الطلب
+                                    </button>
+                                )}
                             </div>
                         </motion.div>
                     ))}

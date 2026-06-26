@@ -44,6 +44,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setUser(currentSession.user);
             }
 
+            // Merge server cart with local cart on login
+            import('../lib/store/cartStore').then(({ useCartStore }) => {
+                useCartStore.getState().loadFromServer();
+            });
+
             try {
                 const { data, error } = await supabase
                     .from('profiles')

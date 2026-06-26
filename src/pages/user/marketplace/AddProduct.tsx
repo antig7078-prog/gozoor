@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { userService } from '../../../services/userService';
 import { marketplaceService } from '../../../services/marketplaceService';
 import { courseService } from '../../../services/courseService';
+import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Store, ArrowRight, Info, Image as ImageIcon, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Store, ArrowRight, Info, Image as ImageIcon, CheckCircle2, AlertTriangle, Edit3, X } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -17,14 +18,27 @@ import { sanitizeInput, sanitizeUrl } from '../../../utils/sanitize';
 export const AddProduct = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { id } = useParams();
+    const isEditing = !!id;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [profileLoading, setProfileLoading] = useState(true);
+    const [productLoading, setProductLoading] = useState(!!id);
     const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
     const [hasMissingProfileInfo, setHasMissingProfileInfo] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
 
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        price: '',
+        stock: '1',
+        category: '',
+        image_url: '',
+        images: [] as string[]
+    });
+
     useEffect(() => {
-        const checkProfileAndCategories = async () => {
+        const init = async () => {
             if (!user) return;
             try {
                 // Check profile
@@ -42,24 +56,34 @@ export const AddProduct = () => {
                 if (!catError && catData) {
                     setCategories(catData);
                 }
+
+                // If editing, fetch product data
+                if (id) {
+                    const { data: product, error: prodError } = await marketplaceService.getProductById(id);
+                    if (prodError) throw new Error(prodError);
+                    if (product) {
+                        setFormData({
+                            title: product.title || '',
+                            description: product.description || '',
+                            price: product.price.toString(),
+                            stock: product.stock.toString(),
+                            category: product.category || '',
+                            image_url: product.image_url || '',
+                            images: (product as any).images || []
+                        });
+                    }
+                    setProductLoading(false);
+                }
             } catch (error) {
                 console.error('Error loading data:', error);
+                toast.error('حدث خطأ أثناء تحميل البيانات');
             } finally {
                 setProfileLoading(false);
             }
         };
 
-        checkProfileAndCategories();
-    }, [user, navigate]);
-
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        price: '',
-        stock: '1',
-        category: '',
-        image_url: ''
-    });
+        init();
+    }, [user, navigate, id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,21 +91,31 @@ export const AddProduct = () => {
 
         setIsSubmitting(true);
         try {
-            const { error } = await marketplaceService.createProduct({
+            const productData = {
                 title: sanitizeInput(formData.title),
                 description: sanitizeInput(formData.description),
                 price: parseFloat(formData.price),
                 stock: parseInt(formData.stock, 10),
                 category: sanitizeInput(formData.category),
                 image_url: sanitizeUrl(formData.image_url),
-                seller_id: user.id
-            });
+                images: formData.images.filter(Boolean)
+            };
 
-            if (error) throw new Error(error);
-            toast.success('تم إضافة المنتج بنجاح!');
+            if (isEditing && id) {
+                const { error } = await marketplaceService.updateProduct(id, productData);
+                if (error) throw new Error(error);
+                toast.success('تم تحديث المنتج بنجاح!');
+            } else {
+                const { error } = await marketplaceService.createProduct({
+                    ...productData,
+                    seller_id: user.id
+                });
+                if (error) throw new Error(error);
+                toast.success('تم إضافة المنتج بنجاح!');
+            }
             navigate('/user-products');
         } catch (error: any) {
-            toast.error(error.message || 'حدث خطأ أثناء إضافة المنتج');
+            toast.error(error.message || 'حدث خطأ أثناء حفظ المنتج');
             console.error(error);
         } finally {
             setIsSubmitting(false);
@@ -179,9 +213,9 @@ export const AddProduct = () => {
                 ) : (
                     <>
                         <PageHeader
-                            title="إضافة منتج جديد"
-                            description="قم بإضافة منتجك الجديد إلى سوق جذور وشاركه مع المجتمع."
-                            icon={Store}
+                            title={isEditing ? 'تعديل المنتج' : 'إضافة منتج جديد'}
+                            description={isEditing ? 'قم بتعديل بيانات منتجك في سوق جذور.' : 'قم بإضافة منتجك الجديد إلى سوق جذور وشاركه مع المجتمع.'}
+                            icon={isEditing ? Edit3 : Store}
                             actions={
                                 <div className="w-full sm:w-auto">
                                     <Link
@@ -299,12 +333,67 @@ export const AddProduct = () => {
                                         />
                                     </div>
 
-                                    {/* Image Upload */}
+                                    {/* Main Image Upload */}
                                     <div className="md:col-span-2">
                                         <ImageUpload 
                                             onUpload={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
                                             defaultValue={formData.image_url}
-                                            label="صورة المنتج"
+                                            label="الصورة الرئيسية للمنتج"
+                                        />
+                                    </div>
+
+                                    {/* Additional Images */}
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-black text-text-primary mb-3">صور إضافية (اختياري)</label>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                            {formData.images.map((img, idx) => (
+                                                <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-border-subtle bg-surface-primary group">
+                                                    <img src={img} alt={`صورة ${idx + 1}`} className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({
+                                                            ...prev,
+                                                            images: prev.images.filter((_, i) => i !== idx)
+                                                        }))}
+                                                        className="absolute top-2 left-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {formData.images.length < 6 && (
+                                                <div
+                                                    onClick={() => document.getElementById('add-image-input')?.click()}
+                                                    className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 hover:border-brand-primary bg-slate-50 hover:bg-brand-primary/5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all text-slate-400 hover:text-brand-primary"
+                                                >
+                                                    <ImageIcon className="w-8 h-8" />
+                                                    <span className="text-[10px] font-bold">إضافة صورة</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <input
+                                            id="add-image-input"
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                if (!file.type.startsWith('image/')) { toast.error('يرجى اختيار صورة صحيحة'); return; }
+                                                if (file.size > 5 * 1024 * 1024) { toast.error('حجم الصورة كبير جداً'); return; }
+                                                try {
+                                                    const fileExt = file.name.split('.').pop();
+                                                    const fileName = `product-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+                                                    const { error: uploadError } = await supabase.storage.from('uploads').upload(`public/${fileName}`, file);
+                                                    if (uploadError) throw uploadError;
+                                                    const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(`public/${fileName}`);
+                                                    setFormData(prev => ({ ...prev, images: [...prev.images, publicUrl] }));
+                                                    toast.success('تم رفع الصورة بنجاح');
+                                                } catch (err: any) {
+                                                    toast.error('حدث خطأ أثناء رفع الصورة');
+                                                }
+                                                e.target.value = '';
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -324,8 +413,8 @@ export const AddProduct = () => {
                                         className="px-12 order-1 sm:order-2"
                                         icon={CheckCircle2}
                                     >
-                                        نشر المنتج للمراجعة
-                                    </Button>
+                                    {isEditing ? 'تحديث المنتج' : 'نشر المنتج للمراجعة'}
+                                </Button>
                                 </div>
                             </form>
                         </div>

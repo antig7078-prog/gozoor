@@ -276,6 +276,11 @@ CREATE TABLE IF NOT EXISTS public.orders (
     total_amount DECIMAL(10, 2) NOT NULL,
     shipping_address TEXT NOT NULL,
     contact_number TEXT NOT NULL,
+    payment_method TEXT DEFAULT 'cod' CHECK (payment_method IN ('cod', 'bank_transfer')),
+    payment_proof_url TEXT,
+    tracking_number TEXT,
+    shipping_company TEXT,
+    estimated_delivery_date DATE,
     status TEXT DEFAULT 'Pending' CHECK (status IN ('Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -367,6 +372,13 @@ CREATE TABLE IF NOT EXISTS public.favorites (
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     course_id UUID REFERENCES public.courses(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, course_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.product_favorites (
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (user_id, product_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.reviews (
@@ -530,6 +542,7 @@ CREATE POLICY "Admins manage workshops" ON public.workshops FOR ALL USING (
 -- سياسات المنتجات والخدمات
 CREATE POLICY "Products are public" ON public.products FOR SELECT USING (true);
 CREATE POLICY "Sellers manage own products" ON public.products FOR ALL USING (auth.uid() = seller_id);
+CREATE POLICY "Admins manage all products" ON public.products FOR ALL USING (public.is_admin(auth.uid()));
 
 -- Services
 DROP POLICY IF EXISTS "Admins can manage services" ON public.services;
@@ -1183,6 +1196,98 @@ CREATE TRIGGER trg_notify_on_new_order_item
     AFTER INSERT ON public.order_items
     FOR EACH ROW
     EXECUTE FUNCTION public.notify_on_new_order_item();
+
+-- دالة لتقليل المخزون تلقائياً عند إنشاء طلب
+CREATE OR REPLACE FUNCTION public.decrement_product_stock(product_id UUID, quantity INTEGER)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.products
+    SET stock = GREATEST(0, stock - quantity)
+    WHERE id = product_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- دالة لإرسال إشعار عند تغيير حالة طلب المتجر
+CREATE OR REPLACE FUNCTION public.notify_on_order_status_change()
+RETURNS TRIGGER AS $$
+DECLARE
+    buyer_name TEXT;
+BEGIN
+    IF OLD.status IS DISTINCT FROM NEW.status THEN
+        SELECT full_name INTO buyer_name FROM public.profiles WHERE id = NEW.buyer_id;
+
+        IF NEW.status = 'Paid' THEN
+            INSERT INTO public.notifications (user_id, title, content, type, link)
+            VALUES (
+                NEW.buyer_id,
+                'تم تأكيد الدفع',
+                'تم تأكيد دفع طلبك رقم #' || substring(NEW.id::text, 1, 8) || '. جاري تجهيز الشحن.',
+                'order',
+                '/market-orders'
+            );
+        ELSIF NEW.status = 'Shipped' THEN
+            INSERT INTO public.notifications (user_id, title, content, type, link)
+            VALUES (
+                NEW.buyer_id,
+                'تم شحن طلبك',
+                'تم شحن طلبك رقم #' || substring(NEW.id::text, 1, 8) || '. سيتم توصيله قريباً.',
+                'order',
+                '/market-orders'
+            );
+        ELSIF NEW.status = 'Delivered' THEN
+            INSERT INTO public.notifications (user_id, title, content, type, link)
+            VALUES (
+                NEW.buyer_id,
+                'تم توصيل طلبك',
+                'تم توصيل طلبك رقم #' || substring(NEW.id::text, 1, 8) || ' بنجاح.',
+                'success',
+                '/market-orders'
+            );
+        ELSIF NEW.status = 'Cancelled' THEN
+            INSERT INTO public.notifications (user_id, title, content, type, link)
+            VALUES (
+                NEW.buyer_id,
+                'تم إلغاء الطلب',
+                'تم إلغاء طلبك رقم #' || substring(NEW.id::text, 1, 8) || '.',
+                'warning',
+                '/market-orders'
+            );
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_notify_on_order_status_change ON public.orders;
+CREATE TRIGGER trg_notify_on_order_status_change
+    AFTER UPDATE ON public.orders
+    FOR EACH ROW
+    EXECUTE FUNCTION public.notify_on_order_status_change();
+
+-- جدول السلة المرتبطة بحساب المستخدم
+CREATE TABLE IF NOT EXISTS public.cart_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    product_id UUID REFERENCES public.products(id) ON DELETE CASCADE NOT NULL,
+    quantity INTEGER DEFAULT 1 NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE (user_id, product_id)
+);
+
+-- جدول كوبونات الخصم
+CREATE TABLE IF NOT EXISTS public.coupons (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    code TEXT UNIQUE NOT NULL,
+    discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+    discount_value DECIMAL(10, 2) NOT NULL,
+    min_amount DECIMAL(10, 2) DEFAULT 0,
+    max_uses INTEGER DEFAULT 0,
+    used_count INTEGER DEFAULT 0,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- 1. منح الصلاحيات الكاملة للأدوار الافتراضية على جميع الجداول والدوال الحالية في قاعدة البيانات
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, authenticated, anon, service_role;

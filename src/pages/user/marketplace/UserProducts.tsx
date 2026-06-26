@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Plus, Trash2, ShoppingBag, Hash, Calendar, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Store, Plus, Trash2, ShoppingBag, Hash, Calendar, ChevronLeft, AlertCircle, Edit3 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -172,6 +172,13 @@ export const UserProducts = () => {
                                         >
                                             معاينة في المتجر
                                             <ChevronLeft className="w-3 h-3" />
+                                        </Link>
+                                        <Link
+                                            to={`/marketplace/edit/${product.id}`}
+                                            className="p-2.5 text-blue-500 bg-blue-50 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm border border-blue-100"
+                                            title="تعديل المنتج"
+                                        >
+                                            <Edit3 className="w-5 h-5" />
                                         </Link>
                                         <button
                                             onClick={() => handleDelete(product.id)}

@@ -2,20 +2,20 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingBag, Filter, ChevronLeft, Plus, X, SlidersHorizontal, LayoutGrid, Check } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { PageHeader } from '../../../components/shared/PageHeader';
 import { useCartStore } from '../../../lib/store/cartStore';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { toast } from 'react-hot-toast';
 
 interface Product {
     id: string;
     title: string;
-    description: string;
+    description?: string;
     price: number;
-    image_url: string;
-    category: string;
+    image_url?: string;
+    category?: string;
     seller_id: string;
     seller?: {
         full_name?: string;
@@ -46,7 +46,7 @@ export const ProductsPage = () => {
             seller_id: product.seller_id,
             title: product.title,
             price: product.price,
-            image_url: product.image_url
+            image_url: product.image_url || ''
         });
         toast.success(`تم إضافة "${product.title}" إلى السلة بنجاح!`);
     };
@@ -54,12 +54,9 @@ export const ProductsPage = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*, seller:profiles(full_name, avatar_url)')
-                    .order('created_at', { ascending: false });
+                const { data, error } = await marketplaceService.getProducts();
 
-                if (error) throw error;
+                if (error) throw new Error(error);
                 if (data) {
                     setProducts(data);
                     if (data.length > 0) {

@@ -49,6 +49,7 @@ const MarketOrders = lazy(() => import('./pages/user/marketplace/MarketOrders').
 const MerchantOrders = lazy(() => import('./pages/user/marketplace/MerchantOrders').then(m => ({ default: m.MerchantOrders })));
 const UserProducts = lazy(() => import('./pages/user/marketplace/UserProducts').then(m => ({ default: m.UserProducts })));
 const AddProduct = lazy(() => import('./pages/user/marketplace/AddProduct').then(m => ({ default: m.AddProduct })));
+const SellerAnalytics = lazy(() => import('./pages/user/marketplace/SellerAnalytics'));
 const JobsListingPage = lazy(() => import('./pages/user/jobs/JobsListingPage').then(m => ({ default: m.JobsListingPage })));
 const JobDetailsPage = lazy(() => import('./pages/user/jobs/JobDetailsPage').then(m => ({ default: m.JobDetailsPage })));
 const MyApplications = lazy(() => import('./pages/user/jobs/MyApplications').then(m => ({ default: m.MyApplications })));
@@ -71,6 +72,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then(m 
 const AdminCourses = lazy(() => import('./pages/admin/AdminCourses').then(m => ({ default: m.AdminCourses })));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers').then(m => ({ default: m.AdminUsers })));
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders').then(m => ({ default: m.AdminOrders })));
+const AdminMarketplaceOrders = lazy(() => import('./pages/admin/AdminMarketplaceOrders').then(m => ({ default: m.AdminMarketplaceOrders })));
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories').then(m => ({ default: m.AdminCategories })));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
 const AddCourse = lazy(() => import('./pages/admin/AddCourse').then(m => ({ default: m.AddCourse })));
@@ -138,7 +140,9 @@ function App() {
                   <Route path="/market-orders" element={<MarketOrders />} />
                   <Route path="/customer-orders" element={<MerchantOrders />} />
                   <Route path="/user-products" element={<UserProducts />} />
+                  <Route path="/seller-analytics" element={<SellerAnalytics />} />
                   <Route path="/marketplace/add" element={<AddProduct />} />
+                  <Route path="/marketplace/edit/:id" element={<AddProduct />} />
                   <Route path="/my-applications" element={<MyApplications />} />
                   <Route path="/jobs/create" element={<CreateJob />} />
                   <Route path="/my-jobs" element={<MyJobs />} />
@@ -164,6 +168,7 @@ function App() {
                   <Route path="/admin/courses/edit/:id" element={<AddCourse />} />
                   <Route path="/admin/users" element={<AdminUsers />} />
                   <Route path="/admin/orders" element={<AdminOrders />} />
+                  <Route path="/admin/marketplace-orders" element={<AdminMarketplaceOrders />} />
                   <Route path="/admin/products" element={<ManageProducts />} />
                   <Route path="/admin/jobs" element={<ManageJobs />} />
                   <Route path="/admin/services" element={<ManageServices />} />

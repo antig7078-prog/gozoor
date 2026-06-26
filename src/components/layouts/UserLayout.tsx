@@ -21,7 +21,8 @@ import {
     Calendar,
     Heart,
     MessageSquare,
-    Bell
+    Bell,
+    TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../lib/store/cartStore';
@@ -139,6 +140,7 @@ export const UserLayout = () => {
             title: 'البيع والخدمات',
             items: [
                 { name: 'إدارة منتجاتي', href: '/user-products', icon: Package },
+                { name: 'تحليلات المبيعات', href: '/seller-analytics', icon: TrendingUp },
                 { name: 'طلبات العملاء', href: '/customer-orders', icon: Users },
                 { name: 'إدارة خدماتي', href: '/user-services', icon: MonitorPlay },
                 { name: 'طلبات الخدمات', href: '/service-orders', icon: FileText },

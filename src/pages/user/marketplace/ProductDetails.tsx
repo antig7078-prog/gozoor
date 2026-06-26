@@ -14,13 +14,18 @@ import {
     User, 
     Calendar,
     Sparkles,
-    Send
+    Send,
+    Heart,
+    ChevronLeft,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../../lib/supabase';
 import { useCartStore } from '../../../lib/store/cartStore';
 import { useRequireAuth } from '../../../hooks/useRequireAuth';
 import { useAuth } from '../../../contexts/AuthContext';
+import { marketplaceService } from '../../../services/marketplaceService';
 import { PageContainer } from '../../../components/shared/PageContainer';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { Button } from '../../../components/ui/Button';
@@ -40,6 +45,7 @@ interface Product {
     stock: number;
     image_url: string;
     category: string;
+    images?: string[];
     profiles?: {
         full_name: string;
         whatsapp: string;
@@ -66,6 +72,8 @@ export const ProductDetails = () => {
     const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
     const [editingRating, setEditingRating] = useState<number>(5);
     const [editingComment, setEditingComment] = useState<string>('');
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     useEffect(() => {
         const fetchProductAndReviews = async () => {
@@ -111,6 +119,32 @@ export const ProductDetails = () => {
         fetchReviewsOnly();
     }, [id, reviewsRefresh]);
 
+    // Check if product is favorited
+    useEffect(() => {
+        if (!id || !user) return;
+        marketplaceService.checkProductFavorite(id).then(({ favorited }) => {
+            setIsFavorited(favorited);
+        });
+    }, [id, user]);
+
+    const toggleFavorite = async () => {
+        if (!requireAuth('سجّل دخولك الأول عشان تقدر تحفظ المنتجات 💖')) return;
+        if (!id) return;
+        const result = await marketplaceService.toggleProductFavorite(id);
+        if (result.error) {
+            toast.error(result.error);
+            return;
+        }
+        setIsFavorited(result.favorited);
+        toast.success(result.favorited ? 'تمت إضافة المنتج للمفضلة 💖' : 'تمت إزالة المنتج من المفضلة');
+    };
+
+    // Build images array for gallery
+    const allImages: string[] = [];
+    if (product?.image_url) allImages.push(product.image_url);
+    if (product?.images && Array.isArray(product.images)) allImages.push(...product.images.filter(Boolean));
+    const uniqueImages = [...new Set(allImages)];
+
     const addItem = useCartStore((state) => state.addItem);
     const isOwner = user?.id === product?.seller_id;
 
@@ -144,6 +178,24 @@ export const ProductDetails = () => {
             image_url: product.image_url
         });
         toast.success(`تمت إضافة ${product.title} إلى السلة بنجاح!`);
+    };
+
+    const buyNow = () => {
+        if (!requireAuth('سجّل دخولك الأول للشراء المباشر 🛒')) return;
+        if (!product) return;
+        if (isOwner) {
+            toast.error('لا يمكنك شراء منتجك الخاص!');
+            return;
+        }
+        addItem({
+            id: product.id,
+            seller_id: product.seller_id,
+            title: product.title,
+            price: product.price,
+            image_url: product.image_url
+        });
+        toast.success(`جاري التوجه لشراء ${product.title}...`);
+        navigate('/marketplace/checkout');
     };
 
     const contactSellerWhatsApp = () => {
@@ -354,37 +406,86 @@ export const ProductDetails = () => {
             <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-slate-100/50 border border-slate-100 flex flex-col lg:flex-row relative mb-12" dir="rtl">
                 <div className="absolute top-0 right-0 w-full h-1.5 bg-brand-primary"></div>
                 
-                {/* Visual Area (Product Image) */}
-                <div className="lg:w-1/2 bg-slate-50 relative overflow-hidden flex items-center justify-center min-h-[350px] sm:min-h-[450px] lg:min-h-[600px] border-l border-slate-100">
-                    {product.image_url ? (
-                        <motion.img
-                            initial={{ scale: 1.05 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.8 }}
-                            src={product.image_url}
-                            alt={product.title}
-                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-103"
-                        />
-                    ) : (
-                        <div className="flex flex-col items-center gap-3 text-slate-350">
-                            <ShoppingBag className="w-32 h-32 stroke-[1]" />
-                            <span className="font-bold text-sm">لا توجد صورة للمنتج</span>
-                        </div>
-                    )}
-                    
-                    {/* Premium Rating Badge Overlay */}
-                    <div className="absolute bottom-6 right-6 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100/50 z-20 hover:scale-105 transition-transform duration-300">
-                        <div className="p-2.5 bg-amber-50 rounded-xl text-amber-500">
-                            <Star className="w-5 h-5 fill-amber-400 stroke-amber-500" />
-                        </div>
-                        <div>
-                            <div className="text-[10px] text-text-muted font-black tracking-widest uppercase">التقييم العام</div>
-                            <div className="text-base font-black text-text-primary flex items-baseline gap-1">
-                                <span>{averageRating}</span>
-                                <span className="text-[10px] text-slate-400 font-bold">({totalReviews} تقييم)</span>
+                {/* Visual Area (Product Image Gallery) */}
+                <div className="lg:w-1/2 bg-slate-50 relative overflow-hidden min-h-[350px] sm:min-h-[450px] lg:min-h-[600px] border-l border-slate-100 flex flex-col">
+                    {/* Main Image */}
+                    <div className="flex-1 relative flex items-center justify-center">
+                        {uniqueImages.length > 0 ? (
+                            <>
+                                <motion.img
+                                    key={selectedImageIndex}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3 }}
+                                    src={uniqueImages[selectedImageIndex]}
+                                    alt={product.title}
+                                    className="w-full h-full object-cover"
+                                />
+                                {uniqueImages.length > 1 && (
+                                    <>
+                                        <button
+                                            onClick={() => setSelectedImageIndex(prev => (prev === 0 ? uniqueImages.length - 1 : prev - 1))}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 backdrop-blur rounded-full shadow-xl hover:bg-white transition-all"
+                                        >
+                                            <ChevronRight className="w-5 h-5 text-slate-700" />
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedImageIndex(prev => (prev === uniqueImages.length - 1 ? 0 : prev + 1))}
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 backdrop-blur rounded-full shadow-xl hover:bg-white transition-all"
+                                        >
+                                            <ChevronLeft className="w-5 h-5 text-slate-700" />
+                                        </button>
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center gap-3 text-slate-350">
+                                <ShoppingBag className="w-32 h-32 stroke-[1]" />
+                                <span className="font-bold text-sm">لا توجد صورة للمنتج</span>
+                            </div>
+                        )}
+
+                        {/* Wishlist Heart Button */}
+                        {user && (
+                            <button
+                                onClick={toggleFavorite}
+                                className="absolute top-6 left-6 p-3 bg-white/90 backdrop-blur rounded-full shadow-xl hover:scale-110 transition-all z-20"
+                            >
+                                <Heart className={`w-6 h-6 ${isFavorited ? 'fill-red-500 text-red-500' : 'text-slate-400'}`} />
+                            </button>
+                        )}
+
+                        {/* Premium Rating Badge Overlay */}
+                        <div className="absolute bottom-6 right-6 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100/50 z-20 hover:scale-105 transition-transform duration-300">
+                            <div className="p-2.5 bg-amber-50 rounded-xl text-amber-500">
+                                <Star className="w-5 h-5 fill-amber-400 stroke-amber-500" />
+                            </div>
+                            <div>
+                                <div className="text-[10px] text-text-muted font-black tracking-widest uppercase">التقييم العام</div>
+                                <div className="text-base font-black text-text-primary flex items-baseline gap-1">
+                                    <span>{averageRating}</span>
+                                    <span className="text-[10px] text-slate-400 font-bold">({totalReviews} تقييم)</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Thumbnail Strip */}
+                    {uniqueImages.length > 1 && (
+                        <div className="flex gap-2 p-3 bg-white/80 border-t border-slate-100 overflow-x-auto hide-scrollbar" dir="ltr">
+                            {uniqueImages.map((img, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setSelectedImageIndex(idx)}
+                                    className={`w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
+                                        idx === selectedImageIndex ? 'border-brand-primary shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
+                                    }`}
+                                >
+                                    <img src={img} alt="" className="w-full h-full object-cover" />
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Details and Description Info Panel */}
@@ -462,17 +563,29 @@ export const ProductDetails = () => {
                                 💡 هذا منتجك الخاص، يمكنك إدارته من لوحة التحكم.
                             </div>
                         )}
-                        
-                        <Button 
-                            onClick={addToCart}
-                            disabled={product.stock <= 0 || isOwner}
-                            variant="primary"
-                            size="lg"
-                            className="w-full py-4 text-base font-black shadow-lg shadow-brand-primary/20 hover:shadow-xl hover:shadow-brand-primary/30 active:scale-98 transition-all flex items-center justify-center gap-2 rounded-2xl"
-                        >
-                            <ShoppingCart className="w-5 h-5" />
-                            {isOwner ? 'منتجك الخاص' : 'شراء وإضافة إلى السلة الآن'}
-                        </Button>
+
+                        {!isOwner && product.stock > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Button
+                                    onClick={addToCart}
+                                    variant="secondary"
+                                    size="lg"
+                                    className="w-full py-4 text-base font-black border-2 border-brand-primary/20 text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 shadow-lg hover:shadow-xl active:scale-98 transition-all rounded-2xl"
+                                >
+                                    <ShoppingCart className="w-5 h-5" />
+                                    أضف إلى السلة
+                                </Button>
+                                <Button
+                                    onClick={buyNow}
+                                    variant="primary"
+                                    size="lg"
+                                    className="w-full py-4 text-base font-black shadow-lg shadow-brand-primary/20 hover:shadow-xl hover:shadow-brand-primary/30 active:scale-98 transition-all rounded-2xl"
+                                >
+                                    <ShoppingBag className="w-5 h-5" />
+                                    شراء الآن
+                                </Button>
+                            </div>
+                        )}
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {/* Contact through Site Chat */}

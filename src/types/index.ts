@@ -179,11 +179,23 @@ export interface Order {
   total_amount: number;
   shipping_address: string;
   contact_number: string;
+  payment_method?: 'cod' | 'bank_transfer';
+  payment_proof_url?: string;
+  tracking_number?: string;
+  shipping_company?: string;
+  estimated_delivery_date?: string;
   status: 'Pending' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled';
   created_at: string;
   updated_at: string;
   items?: OrderItem[];
   buyer?: Profile;
+}
+
+export interface ProductFavorite {
+  user_id: string;
+  product_id: string;
+  created_at: string;
+  products?: Product;
 }
 
 export interface OrderItem {
