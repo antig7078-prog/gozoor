@@ -38,6 +38,8 @@ import team3 from '../../assets/team/3.jpeg';
 import team4 from '../../assets/team/4.jpeg';
 import team5 from '../../assets/team/5.jpeg';
 import team6 from '../../assets/team/6.jpeg';
+import team7 from '../../assets/team/7.jpeg';
+import team8 from '../../assets/team/8.jpeg';
 import logoImg from '../../assets/logo.jpeg';
 
 export const LandingPage = () => {
@@ -57,12 +59,14 @@ export const LandingPage = () => {
     }, []);
 
     const teamMembers = [
-        { name: "أمير اشرف", image: team1 },
+        { name: "أمير اشرف عبدالله (قائد الفريق)", image: team1 },
         { name: "جهاد أشرف محمد الباز", image: team6 },
         { name: "رحمه حماده محمد ياسين", image: team2 },
         { name: "نجوى محمد حسن محمد دسوقي", image: team5 },
         { name: "ندي محمد هنداوي عبدالجليل", image: team4 },
         { name: "ياسمين أحمد السيد عبدالرزاق علي", image: team3 },
+        { name: "منه عبدالعظيم عبدالله قابل", image: team7 },
+        { name: "أحمد تامر عوض أحمد", image: team8 },
     ];
 
     const stats = [
